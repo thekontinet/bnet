@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Http\Controllers\Auth;
+namespace App\Http\Controllers\Central\Authentication;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Models\Tenant;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
-class RegisteredUserController extends Controller
+class RegisteredTenantController extends Controller
 {
     /**
      * Display the registration view.
@@ -32,19 +32,26 @@ class RegisteredUserController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'username' => ['required', 'string', 'lowercase', 'alpha_num', 'max:255', 'unique:'.Tenant::class],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.Tenant::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $user = User::create([
+        $tenant = Tenant::query()->create([
             'name' => $request->name,
+            'username' => $request->username,
             'email' => $request->email,
+            'phone' => $request->phone,
             'password' => Hash::make($request->password),
         ]);
 
-        event(new Registered($user));
+        $tenant->domains()->create([
+            'domain' => $tenant->username . '.' . $request->getHost()
+        ]);
 
-        Auth::login($user);
+        event(new Registered($tenant));
+
+        Auth::login($tenant);
 
         return redirect(RouteServiceProvider::HOME);
     }

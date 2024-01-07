@@ -1,12 +1,13 @@
 <?php
 
-namespace Tests\Feature\Auth;
+namespace Tests\Feature\Central;
 
 use App\Providers\RouteServiceProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
-class RegistrationTest extends TestCase
+class RegisterTenantTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -21,7 +22,9 @@ class RegistrationTest extends TestCase
     {
         $response = $this->post('/register', [
             'name' => 'Test User',
+            'username' => 'testusername',
             'email' => 'test@example.com',
+            'phone' => '09000000000',
             'password' => 'password',
             'password_confirmation' => 'password',
         ]);
