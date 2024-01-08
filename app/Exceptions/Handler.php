@@ -3,6 +3,7 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use MannikJ\Laravel\Wallet\Exceptions\UnacceptedTransactionException;
 use Throwable;
 
 class Handler extends ExceptionHandler
@@ -25,6 +26,10 @@ class Handler extends ExceptionHandler
     {
         $this->reportable(function (Throwable $e) {
             //
+        });
+
+        $this->renderable(function (UnacceptedTransactionException $e) {
+            return redirect('/dashboard')->with('error', $e->getMessage());
         });
     }
 }

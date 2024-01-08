@@ -5,7 +5,7 @@
                 <header class="mb-4">
                     <h1 class="font-medium text-lg">Manage {{str($service->value)->ucfirst()}} Service</h1>
 
-                    <div class="flex items-center gap-4 mt-4">
+                    <div class="flex items-center flex-wrap gap-4 mt-4">
                         @foreach($providers as $provider)
                             <a href="?provider={{$provider}}" class="text-sm bg-slate-200 px-4 py-1 rounded {{request()->get('provider') == $provider ? 'bg-black text-white' : 'hover:bg-gray-500 hover:text-white'}}">{{$provider}}</a>
                         @endforeach

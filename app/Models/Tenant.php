@@ -2,6 +2,10 @@
 
 namespace App\Models;
 
+use App\Models\Contracts\Customer;
+use App\Models\Contracts\HasSubscription;
+use App\Models\Contracts\Payable;
+use App\Models\Contracts\Subscriber;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Auth\MustVerifyEmail;
 use Illuminate\Auth\Passwords\CanResetPassword;
@@ -13,6 +17,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\Access\Authorizable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
+use MannikJ\Laravel\Wallet\Traits\HasWallet;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
@@ -22,7 +27,8 @@ class Tenant extends BaseTenant implements
     AuthenticatableContract,
     AuthorizableContract,
     CanResetPasswordContract,
-    TenantWithDatabase
+    TenantWithDatabase,
+    Customer
 {
     use HasFactory,
         HasDomains,
@@ -31,7 +37,10 @@ class Tenant extends BaseTenant implements
         Authorizable,
         CanResetPassword,
         MustVerifyEmail,
-        Notifiable;
+        Notifiable,
+        Payable,
+        HasWallet,
+        HasSubscription;
 
     protected $guarded = [];
 
