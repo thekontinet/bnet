@@ -18,6 +18,7 @@ use Illuminate\Foundation\Auth\Access\Authorizable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use MannikJ\Laravel\Wallet\Traits\HasWallet;
+use Rawilk\Settings\Models\HasSettings;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
@@ -40,7 +41,8 @@ class Tenant extends BaseTenant implements
         Notifiable,
         Payable,
         HasWallet,
-        HasSubscription;
+        HasSubscription,
+        HasSettings;
 
     protected $guarded = [];
 
@@ -66,5 +68,10 @@ class Tenant extends BaseTenant implements
     {
         return $this->belongsToMany(Package::class, 'tenant_package')
             ->withPivot(['price', 'discount']);
+    }
+
+    public function preferences()
+    {
+        return $this->hasMany(Preference::class);
     }
 }

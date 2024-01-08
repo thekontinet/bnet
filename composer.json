@@ -13,6 +13,7 @@
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
         "mannikj/laravel-wallet": "^10.1",
+        "rawilk/laravel-settings": "^3.3",
         "stancl/tenancy": "^3.7"
     },
     "require-dev": {

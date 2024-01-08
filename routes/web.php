@@ -4,6 +4,7 @@ use App\Http\Controllers\Central\DashboardController;
 use App\Http\Controllers\Central\FundWalletController;
 use App\Http\Controllers\Central\ProfileController;
 use App\Http\Controllers\Central\ServiceController;
+use App\Http\Controllers\Central\SettingsController;
 use App\Http\Controllers\Central\SubscriptionController;
 use Illuminate\Support\Facades\Route;
 
@@ -29,6 +30,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/fund/verify', [FundWalletController::class, 'index'])->name('deposit.confirm');
 
     Route::post('/subscribe', [SubscriptionController::class, 'store'])->name('subscribe.store');
+
+    Route::get('/settings/{type}', [SettingsController::class, 'edit'])->name('settings.edit');
+    Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
 });
 
 require __DIR__.'/auth.php';
