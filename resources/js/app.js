@@ -6,8 +6,8 @@ import Alpine from 'alpinejs';
 
 Alpine.plugin(mask)
 
-createIcons();
-
 window.Alpine = Alpine;
 
 Alpine.start();
+
+createIcons();
