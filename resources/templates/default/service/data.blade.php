@@ -1,24 +1,15 @@
 <x-tenant::layouts.app>
-    <x-tenant::appbar title="Purchase Airtime"/>
+    <x-tenant::appbar title="Purchase Mobile Data"/>
 
     <section class="pb-32 bg-white rounded-t-xl p-4 min-h-screen">
         <header class="mb-4">
-            <h4 class="font-medium">Recharge Airtime</h4>
+            <h4 class="font-medium">Recharge Mobile Data</h4>
             {{--            <p class="text-sm">Update account information</p>--}}
         </header>
 
         <div class="flex flex-col justify-center">
-            <form action="{{ route('tenant.package.purchase', $package) }}" method="post" class="space-y-4">
+            <form method="post" class="space-y-4">
                 @csrf
-                <div>
-                    <x-tenant::input-label for="provider" value="Select Network"/>
-                    <x-tenant::select-input class="w-full" name="package_id" id="provider" required="">
-                        @foreach($packages as $package)
-                            <option value="{{$package->id}}">{{ucfirst($package->title)}} = {{money($package->sellPrice())}}</option>
-                        @endforeach
-                    </x-tenant::select-input>
-                    <x-tenant::input-error :messages="$errors->get('package_id')"/>
-                </div>
 
                 <div>
                     <x-tenant::input-label for="phone" value="Phone"/>
@@ -26,7 +17,14 @@
                     <x-tenant::input-error :messages="$errors->get('phone')"/>
                 </div>
 
-                <x-tenant::primary-button>Purchase</x-tenant::primary-button>
+
+                <div class="space-y-2 h-[200px] overflow-y-auto py-4">
+                    @foreach($packages as $package)
+                        <x-tenant::primary-button class="w-full" formaction="{{ route('tenant.package.purchase', $package) }}">
+                            Purchase {{$package->title}}
+                        </x-tenant::primary-button>
+                    @endforeach
+                </div>
             </form>
         </div>
     </section>
