@@ -12,7 +12,7 @@ class DomainController extends Controller
     {
         $mainDomain = $request->host();
         $request->validateWithBag('domainCreated', [
-           'domain' => ['required', 'string', "doesnt_end_with:$mainDomain",  'regex:/^(?:[-A-Za-z0-9]+\.)+[A-Za-z]{2,6}$/', 'unique:domains,domain']
+           'domain' => ['required', 'string', "ends_with:$mainDomain",  'regex:/^(?:[-A-Za-z0-9]+\.)+[A-Za-z]{2,6}$/', 'unique:domains,domain']
         ], [
             'domain.regex' => 'invalid domain name'
         ]);

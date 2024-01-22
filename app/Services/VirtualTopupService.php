@@ -29,9 +29,4 @@ class VirtualTopupService
             Package::query()->firstOrCreate($packageData);
         }
     }
-
-    public function getProvider(): PackageManager
-    {
-        return $this->provider;
-    }
 }
