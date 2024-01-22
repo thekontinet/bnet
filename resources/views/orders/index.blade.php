@@ -1,0 +1,30 @@
+<x-app-layout>
+    <x-slot name="header">
+        <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                {{ __('Dashboard') }}
+            </h2>
+
+            <a href="{{route('deposit.create')}}">
+                <x-primary-button class="flex-col">
+                    Fund Wallet
+                </x-primary-button>
+            </a>
+        </div>
+    </x-slot>
+
+    <section class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4">
+        <x-card>
+            <div class="container px-4 mx-auto">
+                <div class="flex items-center gap-x-3">
+                    <h2 class="text-lg font-medium text-gray-800 dark:text-white">Order History</h2>
+                </div>
+                @include('orders.partials.orders-table')
+            </div>
+
+            <div class="mt-4 px-4">
+                {{$orders->links()}}
+            </div>
+        </x-card>
+    </section>
+</x-app-layout>

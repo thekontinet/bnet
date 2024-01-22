@@ -11,7 +11,8 @@ class PackageService
 {
     public function syncTenantPackages(Tenant $tenant)
     {
-        return Package::all()->each(fn(Package $package) => $package->tenants()->where('id', Auth::id())->sync([
+        return Package::query()->whereNotIn('id', $tenant->packages()->pluck('package_id')->toArray())
+            ->each(fn(Package $package) => $package->tenants()->where('id', $tenant->id)->sync([
             $tenant->id => [
                 'price' => $package->price,
                 'discount' => $package->discount

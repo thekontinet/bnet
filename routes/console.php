@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\ServiceEnum;
+use App\Services\VirtualTopupService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 
@@ -17,3 +19,10 @@ use Illuminate\Support\Facades\Artisan;
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
+
+
+Artisan::command('package:upload', function () {
+    foreach (ServiceEnum::cases() as $service){
+        (new VirtualTopupService($service))->uploadPackages();
+    }
+})->purpose('Upload packages from service apis to DB');

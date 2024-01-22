@@ -15,7 +15,7 @@ return [
 
     'defaults' => [
         'guard' => 'tenant',
-        'passwords' => 'users',
+        'passwords' => 'tenants',
     ],
 
     /*
@@ -66,7 +66,7 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => App\Models\Tenant::class,
+            'model' => App\Models\Customer::class,
         ],
         'tenants' => [
             'driver' => 'eloquent',

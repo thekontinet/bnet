@@ -2,12 +2,18 @@
 
 namespace App\Models\Contracts;
 
+use App\Enums\ErrorCode;
 use App\Models\Payment;
+use App\Models\Transaction;
+use Exception;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Cknow\Money\Money;
+use MannikJ\Laravel\Wallet\Exceptions\UnacceptedTransactionException;
 
 trait Payable
 {
+    use HasWallet;
     public function payments()
     {
         return $this->morphMany(Payment::class, 'payable');
@@ -17,10 +23,55 @@ trait Payable
     {
         return $this->payments()->create([
             'tenant_id' => tenant('id'),
-            'reference' => uniqid(time() . Str::random(4), true),
+            'reference' => time() . Str::random(4),
             'amount' => $money->getAmount(),
             'status' => Payment::STATUS_PENDING,
             'gateway' => 'paystack'
         ]);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function pay(Product $product): Transaction
+    {
+        try{
+            return DB::transaction(function() use($product){
+                $transaction = $this->wallet->withdraw($product->getPrice($this), $product->getMeta());
+
+                /**
+                 * Debit tenant if application is in tenant context
+                 * and return the owners transaction
+                 */
+                if(!tenant()) {
+                   return $transaction;
+                }
+
+                if(!tenant()->wallet->canWithdraw($product->getPrice(tenant()))){
+                    throw new Exception('Service unavailable. try again later', ErrorCode::TENANT_OUT_OF_BUSINESS);
+                }
+
+                tenant()->wallet->withdraw($product->getPrice(tenant()), $product->getMeta());
+
+                return $transaction;
+            });
+        }catch (UnacceptedTransactionException $exception){
+            throw new Exception($exception->getMessage(), ErrorCode::LOW_BALANCE);
+        }
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function refund(Product $product): Transaction
+    {
+        try {
+            return DB::transaction(function() use($product){
+                if(tenant()) tenant()->wallet->deposit($product->getPrice(tenant()), [...$product->getMeta(), 'description' => 'Refund for '. $product->title]);
+                return $this->wallet->deposit($product->getPrice($this), [...$product->getMeta(), 'description' => 'Refund for '. $product->title]);
+            });
+        }catch (UnacceptedTransactionException $exception){
+            throw new Exception($exception->getMessage(), ErrorCode::ORDER_PROCESSING_FAILED);
+        }
     }
 }

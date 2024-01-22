@@ -18,7 +18,7 @@ return new class extends Migration
         if (! Schema::hasTable($walletTable)) {
             Schema::create($walletTable, function (Blueprint $table) {
                 $table->increments('id');
-                $table->string('owner_id')->nullable();
+                $table->foreignId('owner_id')->nullable();
                 $table->string('owner_type')->nullable();
                 $type = config('wallet.column_type');
                 if ($type == 'decimal') {
@@ -37,6 +37,7 @@ return new class extends Migration
             Schema::create($transactionTable, function (Blueprint $table) {
                 $table->increments('id');
                 $table->unsignedInteger('wallet_id');
+                $table->foreignUuid('tenant_id')->nullable();
 
                 if (config('wallet.column_type') == 'decimal') {
                     $table->decimal('amount', 12, 4); // amount is an decimal, it could be "dollars" or "cents"

@@ -30,7 +30,9 @@ class SubscriptionService
     public function subscriberCanUpgradeToPlan(Plan $plan, ?Tenant $tenant = null): bool
     {
         $subscriber = $this->getSubscriber($tenant);
-        return !($subscriber->subscription?->plan_id === $plan->id);
+
+        return $subscriber->subscription?->plan->isNot($plan) ||
+            $subscriber->subscription?->expires_at->isPast();
     }
 
     public function subscribe(Plan $plan, ?Tenant $tenant = null): Subscription

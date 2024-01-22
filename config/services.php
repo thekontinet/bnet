@@ -34,6 +34,10 @@ return [
     'paystack' => [
         'secret_key' => env('PAYSTACK_SECRET'),
         'public_key' => env('PAYSTACK_PUBLIC'),
+    ],
+
+    'airtimenigeria' => [
+        'api_key' => env('AIRTIME_NIGERIA_API_KEY'),
     ]
 
 ];

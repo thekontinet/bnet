@@ -10,13 +10,17 @@
     </header>
 
 
-    <form method="post" action="{{ route('settings.update') }}" class="mt-6 space-y-6">
+    <form method="post" action="{{ $field['action'] ?? route('settings.update') }}" enctype="multipart/form-data" class="mt-6 space-y-6">
         @csrf
 
         @foreach($form['fields'] ?? [] as $name => $field)
             <div>
                 <x-input-label :for="$field['name']" :value="__($field['label'])" />
-                <x-text-input :id="$field['name']" name="form[{{$field['name']}}]" type="text" class="mt-1 block w-full" :value="old($field['name'], $user->settings()->get($field['name']))"/>
+                @if(($field['type'] ?? 'text') == 'file')
+                    <x-file-input :id="$field['name']" name="form[{{$field['name']}}]" class="mt-1 block w-full" :value="old($field['name'], asset('storage/' . $user->settings()->get($field['name'])))"/>
+                @else
+                    <x-text-input :id="$field['name']" name="form[{{$field['name']}}]" class="mt-1 block w-full" :value="old($field['name'], $user->settings()->get($field['name']))"/>
+                @endif
                 <x-input-error class="mt-2" :messages="$errors->get('form.' . $field['name'])" />
             </div>
         @endforeach

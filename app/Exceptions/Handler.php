@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use App\Enums\ErrorCode;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use MannikJ\Laravel\Wallet\Exceptions\UnacceptedTransactionException;
 use Throwable;
@@ -26,6 +27,15 @@ class Handler extends ExceptionHandler
     {
         $this->reportable(function (Throwable $e) {
             //
+        });
+
+        $this->renderable(function (\Exception $e) {
+            logger()->error($e->getMessage());
+
+            if($e->getCode() != 0) return redirect('/dashboard')
+                ->with('error', ErrorCode::getMessage($e->getCode()) ?? $e->getMessage());
+
+            return null;
         });
 
         $this->renderable(function (UnacceptedTransactionException $e) {

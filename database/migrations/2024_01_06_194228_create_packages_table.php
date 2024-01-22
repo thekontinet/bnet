@@ -28,7 +28,7 @@ return new class extends Migration
         Schema::create('tenant_package', function (Blueprint $table) {
             $table->id();
             $table->foreignId('package_id')->constrained()->cascadeOnDelete();
-            $table->foreignUuid('tenant_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
             $table->integer('price');
             $table->integer('discount')->default(0);
             $table->timestamps();

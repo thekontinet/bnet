@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers\Central;
 
+use App\Enums\Config;
+use App\Exceptions\AppError;
+use App\Exceptions\PaymentError;
 use App\Http\Controllers\Controller;
-use App\Models\Payment;
+use App\Models\Customer;
+use App\Models\Tenant;
+use App\Services\Gateways\Paystack;
 use App\Services\PaymentService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 
 class FundWalletController extends Controller
 {
-    public function __construct(private PaymentService $paymentService)
+    public function __construct(private readonly PaymentService $paymentService)
     {
     }
 
@@ -19,35 +22,12 @@ class FundWalletController extends Controller
     {
         //TODO: Use webhook for payment verification instead
         try {
-            $reference = $request->get('reference');
-            // Acquire a lock for 5 minutes
-            if (!Cache::lock("payment_verification_{$reference}", 300)) {
-                throw new \Exception('Payment processing');
-            }
-
-            $payment = Payment::getPendingByReference($reference);
-
-            if(!$payment){
-                throw new \Exception('Payment not approved');
-            }
-
-            if (!$this->paymentService->verifyPayment($payment)) {
-                throw new \Exception('Payment pending or processed');
-            }
-
-            DB::transaction(function() use($reference, $payment){
-                $payment->verify();
-
-                auth()->user()->wallet->deposit($payment->amount->getAmount(), [
-                    'description' => 'Fund wallet',
-                    'payment_reference' => $reference
-                ]);
-            });
-
+            $this->paymentService->verifyPaymentFromRequest($request);
             return redirect('/dashboard')->with('message', 'payment successful');
+        } catch (AppError $e) {
+            return redirect('/dashboard')->with('error', $e->getMessage());
         } catch (\Exception $e) {
-            logger()->error('Payment confirmation failed: ' . $e->getMessage());
-            return redirect('/dashboard')->with('error', 'error confirming payment');
+            return redirect('/dashboard')->with('error', 'Payment verification failed');
         }
     }
 
@@ -58,16 +38,7 @@ class FundWalletController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'amount' => ['required', 'decimal:2', 'money', 'numeric']
-        ], [
-            'amount.required' => 'required',
-            'amount.decimal' => 'invalid format. 2 decimal place number required'
-        ]);
-
-        $payment = auth()->user()->initializePayment(money($request->amount));
-
-        $paymentLink = $this->paymentService->createPaymentLink($payment);
+        $paymentLink = $this->paymentService->createPaymentLinkFromRequest($request);
 
         return redirect($paymentLink);
     }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Central;
 
+use App\Enums\Config;
 use App\Enums\Settings\AutomaticPaymentSetting;
 use App\Enums\Settings\ManualPaymentSetting;
 use App\Http\Controllers\Controller;
@@ -17,22 +18,29 @@ class SettingsController extends Controller
         /**
          * To add more preference settings, add more makeForm() to the array
          */
-        return view("settings.$type", [
+
+        /**
+         * TODO: Restructure the settings class. The implementation is not cool
+         */
+        return view("settings.payment", [
             'user' => Auth::user(),
-            'forms' => [
-                $this->makeForm(AutomaticPaymentSetting::class, 'Automatic Payment', 'Update automatic payment info to enable automatic payment on your site'),
-                $this->makeForm(ManualPaymentSetting::class, 'Manual Payment', 'Update bank details users can deposit to'),
-            ]
+            'forms' => \config("form.$type")
         ]);
     }
 
     public function update(Request $request)
     {
         $validated = $request->validate([
-            'form.*' => ['required']
+            'form.*' => []
         ]);
 
-        foreach ($validated['form'] as $name => $value){
+        $data = $validated['form'];
+
+        foreach ($request->allFiles()['form'] ?? [] as $key => $file){
+            $data[$key] = $file->store("uploads", 'public');
+        }
+
+        foreach ($data as $name => $value){
             Auth::user()->settings()->set($name, $value);
         }
 

@@ -23,10 +23,7 @@ class SubscriptionController extends Controller
         try {
             $plan =  Plan::find($request->get('plan_id'));
 
-            if(!$this->subscriptionService->subscriberCanUpgradeToPlan($plan)){
-                return redirect()->back()->with('error', 'This plan cannot be activated');
-            }
-
+            //TODO: Add a feature where remaining days for previous plan is added to new plan if old plan hasnt expired
             $this->subscriptionService->subscribe($plan);
 
             return redirect()->back()->with('message', 'Subscription successful');

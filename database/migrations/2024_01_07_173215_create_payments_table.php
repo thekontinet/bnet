@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
-            $table->string('tenant_id')->nullable();
+            $table->foreignId('tenant_id')->nullable();
             $table->string('payable_type');
-            $table->string('payable_id');
+            $table->foreignId('payable_id');
             $table->string('reference')->unique();
             $table->bigInteger('amount');
             $table->string('status');

@@ -2,22 +2,21 @@
 
 namespace App\Models;
 
-use App\Models\Contracts\Customer;
+use App\Enums\Config;
+use App\Models\Contracts\Customer as CustomerContract;
 use App\Models\Contracts\HasSubscription;
 use App\Models\Contracts\Payable;
-use App\Models\Contracts\Subscriber;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Auth\MustVerifyEmail;
 use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\Access\Authorizable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Str;
-use MannikJ\Laravel\Wallet\Traits\HasWallet;
+use Illuminate\Support\Facades\Storage;
 use Rawilk\Settings\Models\HasSettings;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDatabase;
@@ -29,7 +28,7 @@ class Tenant extends BaseTenant implements
     AuthorizableContract,
     CanResetPasswordContract,
     TenantWithDatabase,
-    Customer
+    CustomerContract
 {
     use HasFactory,
         HasDomains,
@@ -40,7 +39,6 @@ class Tenant extends BaseTenant implements
         MustVerifyEmail,
         Notifiable,
         Payable,
-        HasWallet,
         HasSubscription,
         HasSettings;
 
@@ -64,14 +62,24 @@ class Tenant extends BaseTenant implements
         ];
     }
 
+    public function getLogoUrl()
+    {
+        return $this->logo ? Storage::url($this->logo) : 'https://via.placeholder.com/150';
+    }
+
     public function packages()
     {
         return $this->belongsToMany(Package::class, 'tenant_package')
             ->withPivot(['price', 'discount']);
     }
 
-    public function preferences()
+    public function customers(): HasMany
     {
-        return $this->hasMany(Preference::class);
+        return $this->hasMany(Customer::class);
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
     }
 }

@@ -21,7 +21,6 @@ class TenantFactory extends Factory
             'name' => fake()->name(),
             'username' => fake()->firstName(),
             'email' => fake()->email(),
-            'phone' => fake()->phoneNumber(),
             'email_verified_at' => now(),
             'password' => Hash::make('password'),
             'data' => []

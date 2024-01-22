@@ -3,11 +3,15 @@
 namespace App\Models;
 
 use App\Enums\ServiceEnum;
+use App\Models\Contracts\Customer;
+use App\Models\Contracts\Product;
+use App\Models\Customer as CustomerModel;
 use http\Exception\InvalidArgumentException;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Package extends Model
+class Package extends Model implements Product
 {
     use HasFactory;
 
@@ -19,10 +23,37 @@ class Package extends Model
 
     protected $casts = [
         'service' => ServiceEnum::class,
-        'price_type' => 'string'
+        'price_type' => 'string',
+        'data' => 'json'
     ];
 
+    public function code(): Attribute
+    {
+        return new Attribute(
+            fn() => $this->data['package_code'] ?? null
+        );
+    }
+
+    public function getSellerPrice()
+    {
+        return $this->tenants()->where('tenant_id', tenant('id'))->first()?->pivot;
+    }
+
     public function sellPrice()
+    {
+        if($this->price_type === self::PRICE_TYPE_FIXED){
+            return $this->getSellerPrice()->price;
+        }
+
+        if($this->price_type === self::PRICE_TYPE_DISCOUNT){
+            if(!request()->get('amount')) throw new InvalidArgumentException('No amount in request');
+            return (request()->get('amount') - (request()->get('amount') * ($this->getSellerPrice()->discount/100))) * 100;
+        }
+
+        throw new InvalidArgumentException('Invalid package price type');
+    }
+
+    public function buyPrice()
     {
         if($this->price_type === self::PRICE_TYPE_FIXED){
             return $this->price;
@@ -30,10 +61,26 @@ class Package extends Model
 
         if($this->price_type === self::PRICE_TYPE_DISCOUNT){
             if(!request()->get('amount')) throw new InvalidArgumentException('No amount in request');
-            return request()->get('amount') * ($this->discount/100);
+            return (request()->get('amount') - (request()->get('amount') * ($this->discount/100))) * 100;
         }
 
         throw new InvalidArgumentException('Invalid package price type');
+    }
+
+    public function getPrice(Customer $customer): string
+    {
+        return match ($customer::class){
+            Tenant::class => $this->buyPrice(),
+            CustomerModel::class => $this->sellPrice(),
+            default => ''
+        };
+    }
+
+    public function getMeta(): array
+    {
+        return [
+            'description' => $this->title . ' Purchase'
+        ];
     }
 
     public function tenants()

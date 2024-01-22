@@ -2,8 +2,10 @@
 
 namespace Tests\Feature\Central;
 
+use App\Enums\Config;
 use App\Models\Payment;
 use App\Models\Tenant;
+use App\Services\Gateways\Contracts\Gateway;
 use App\Services\Gateways\Paystack;
 use App\Services\PaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -15,6 +17,17 @@ class FundingTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_can_use_the_correct_key(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $this->actingAs($tenant)->get(route('deposit.create'));
+
+        $this->assertEquals(
+            app(Gateway::class)->getSecret(),
+            config('services.paystack.secret_key')
+        );
+    }
+
     public function test_can_render_funding_page(): void
     {
         $tenant = Tenant::factory()->create();
@@ -25,8 +38,9 @@ class FundingTest extends TestCase
 
     public function test_can_create_payment_link_and_redirect_to_make_payment(): void
     {
-        $this->partialMock(PaymentService::class, function($mock){
+        $this->partialMock(Gateway::class, function($mock){
             $mock->shouldReceive('createPaymentLink')->andReturn('/fake-payment-link');
+            $mock->shouldReceive('isReady')->andReturn(true);
         });
 
         $tenant = Tenant::factory()->create();
@@ -44,8 +58,9 @@ class FundingTest extends TestCase
 
     public function test_wallet_funded_if_payment_confirmation_is_successful()
     {
-        $this->partialMock(PaymentService::class, function($mock){
+        $this->partialMock(Gateway::class, function($mock){
             $mock->shouldReceive('verifyPayment')->andReturn(true);
+            $mock->shouldReceive('isReady')->andReturn(true);
         });
 
         $tenant = Tenant::factory()->create();
@@ -67,7 +82,7 @@ class FundingTest extends TestCase
 
     public function test_wallet_not_funded_if_payment_confirmation_is_fails()
     {
-        $this->partialMock(PaymentService::class, function($mock){
+        $this->partialMock(Gateway::class, function($mock){
             $mock->shouldReceive('verifyPayment')->andReturn(false);
         });
 

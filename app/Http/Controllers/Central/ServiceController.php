@@ -8,10 +8,11 @@ use App\Models\Package;
 use App\Services\PackageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class ServiceController extends Controller
 {
-    public function __construct(private PackageService $packageService)
+    public function __construct(private readonly PackageService $packageService)
     {
     }
 
@@ -22,6 +23,10 @@ class ServiceController extends Controller
 
     public function edit(Request $request, ServiceEnum $service)
     {
+        if(Cache::lock('user' . auth()->id() . 'service-lock', 300, auth()->id())){
+            $this->packageService->syncTenantPackages(auth()->user());
+        }
+
         $data = [
             'service' => $service,
             'packages' => []

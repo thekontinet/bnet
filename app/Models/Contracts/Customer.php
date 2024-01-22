@@ -2,6 +2,7 @@
 
 namespace App\Models\Contracts;
 
+use App\Models\Transaction;
 use Cknow\Money\Money;
 
 interface Customer
@@ -11,4 +12,6 @@ interface Customer
     public function initializePayment(Money $money);
 
     public function wallet();
+
+    public function pay(Product $product): Transaction;
 }

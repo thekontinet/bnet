@@ -7,4 +7,8 @@ interface Gateway
     public function createPaymentLink(int $amount, string $email, $reference, ?string $callback_url): string;
 
     public function verifyPayment(string $reference): bool;
+
+    public function getSecret(): string;
+
+    public function isReady(): bool;
 }

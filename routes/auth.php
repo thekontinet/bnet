@@ -7,20 +7,20 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\VerifyEmailController;
-use App\Http\Controllers\Central\Authentication\TenantAuthenticatedSessionController;
-use App\Http\Controllers\Central\Authentication\RegisteredTenantController;
+use App\Http\Controllers\Central\Authentication\CentralAuthenticatedSessionController;
+use App\Http\Controllers\Central\Authentication\CentralRegisterController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
-    Route::get('register', [RegisteredTenantController::class, 'create'])
+    Route::get('register', [CentralRegisterController::class, 'create'])
                 ->name('register');
 
-    Route::post('register', [RegisteredTenantController::class, 'store']);
+    Route::post('register', [CentralRegisterController::class, 'store']);
 
-    Route::get('login', [TenantAuthenticatedSessionController::class, 'create'])
+    Route::get('login', [CentralAuthenticatedSessionController::class, 'create'])
                 ->name('login');
 
-    Route::post('login', [TenantAuthenticatedSessionController::class, 'store']);
+    Route::post('login', [CentralAuthenticatedSessionController::class, 'store']);
 
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
                 ->name('password.request');
@@ -54,6 +54,6 @@ Route::middleware('auth')->group(function () {
 
     Route::put('password', [PasswordController::class, 'update'])->name('password.update');
 
-    Route::post('logout', [TenantAuthenticatedSessionController::class, 'destroy'])
+    Route::post('logout', [CentralAuthenticatedSessionController::class, 'destroy'])
                 ->name('logout');
 });

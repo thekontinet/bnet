@@ -18,7 +18,7 @@ class ProfileUpdateRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'lowercase', 'alpha_num', 'max:255',  Rule::unique(Tenant::class)->ignore($this->user()->id)],
-            //'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(Tenant::class)->ignore($this->user()->id)],
+            'email' => ['string', 'lowercase', 'email', 'max:255', Rule::unique(Tenant::class)->ignore($this->user()->id)],
         ];
     }
 }

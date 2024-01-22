@@ -6,7 +6,30 @@ $navitems = [
     ],
     'Services' => [
         'href' => route('services.index'),
-        'active' => request()->routeIs('services.index'),
+        'active' => request()->routeIs('services.*'),
+    ],
+    'Customers' => [
+        'href' => route('customer.index'),
+        'active' => request()->routeIs('customer.index'),
+    ],
+    'Orders' => [
+        'href' => route('order.index'),
+        'active' => request()->routeIs('order.index'),
+    ]
+];
+
+$dropitems = [
+    'Account Settings' => [
+        'href' => route('profile.edit'),
+        'active' => request()->routeIs('profile.edit'),
+    ],
+    'Application Settings' => [
+        'href' => route('site'),
+        'active' => request()->routeIs('site'),
+    ],
+    'Payment Settings' => [
+        'href' => route('settings.edit', 'payment'),
+        'active' => request()->routeIs('settings.edit', 'payment'),
     ]
 ]
 @endphp
@@ -48,9 +71,11 @@ $navitems = [
                     </x-slot>
 
                     <x-slot name="content">
-                        <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
-                        </x-dropdown-link>
+                        @foreach($dropitems as $name => $nav)
+                            <x-dropdown-link :href="$nav['href']" :active="$nav['active']">
+                                {{ __($name) }}
+                            </x-dropdown-link>
+                        @endforeach
 
                         <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}">
@@ -96,9 +121,12 @@ $navitems = [
             </div>
 
             <div class="mt-3 space-y-1">
-                <x-responsive-nav-link :href="route('profile.edit')">
-                    {{ __('Profile') }}
-                </x-responsive-nav-link>
+                @foreach($dropitems as $name => $nav)
+                    <x-responsive-nav-link :href="$nav['href']" :active="$nav['active']">
+                        {{ __($name) }}
+                    </x-responsive-nav-link>
+                @endforeach
+
 
                 <!-- Authentication -->
                 <form method="POST" action="{{ route('logout') }}">

@@ -34,7 +34,13 @@ class Payment extends Model
         return self::query()
             ->onlyPending()
             ->where('status', self::STATUS_PENDING)
+            ->where('reference', $reference)
             ->first();
+    }
+
+    public function isSuccessful()
+    {
+        return $this->status === self::STATUS_SUCCESS;
     }
 
     public function verify()
