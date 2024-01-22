@@ -24,7 +24,7 @@ class DataPackageManager implements PackageManager
     const PROVIDER_Airtel = 'airtel';
     const PROVIDER_9Mobile = '9mobile';
 
-    public string $endpoint = 'https://www.airtimenigeria.com/api/v1/data/plans';
+    public string $endpoint = 'https://www.airtimenigeria.com/api/v1';
 
     public function __construct()
     {
