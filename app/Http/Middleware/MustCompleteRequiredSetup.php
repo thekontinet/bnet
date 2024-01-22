@@ -36,7 +36,7 @@ class MustCompleteRequiredSetup
         $user = $request->user();
         return $user->settings()->get(Config::PAYSTACK_SECRET->value) ||
             ($user->settings()->get(Config::BANK_ACCOUNT_NUMBER->value) &&
-                $user->settings()->get(Config::BUSINESS_NAME->value) &&
+                $user->settings()->get(Config::BANK_ACCOUNT_NAME->value) &&
                 $user->settings()->get(Config::BANK_NAME->value));
     }
 }
