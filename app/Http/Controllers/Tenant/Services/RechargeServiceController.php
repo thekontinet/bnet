@@ -63,7 +63,7 @@ class RechargeServiceController extends BaseTenantController
      */
     public function update(Request $request, Package $package, OrderService $orderService)
     {
-        $package->tenants()->findOrFail(tenant('id'));
+//        $package->tenants()->findOrFail(tenant('id'));
 
         /**
          * TODO: add feature to help switch a service on or off so
