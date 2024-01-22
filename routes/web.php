@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('auth.login');
-})->middleware('guest');;
+});
 
 //TODO: Test MustCompleteRequiredSetup::class middleware
 Route::get('/dashboard', DashboardController::class)
