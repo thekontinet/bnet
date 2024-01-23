@@ -12,5 +12,5 @@ interface PackageManager
 
     public function rules(): array;
 
-    public function procesDelivery(Package $package, array $params): array;
+    public function handleDelivery(Package $package, array $params): array;
 }

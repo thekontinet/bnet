@@ -24,8 +24,8 @@
         </x-card>
         <x-card class="p-6 text-gray-900">
             <h4 class="text-xs">Current Plan</h4>
-            <p class="text-xl">{{$tenant->getPlan()?->title}}</p>
-            <p class="text-xs">Expiry: {{$plan_remaining_days}}</p>
+            <p class="text-xl">{{$tenant->activePlan?->title ?? 'No active subscription'}}</p>
+            <p class="text-xs">Expiry: {{$tenant->subscription?->expires_at->diffForHumans()}}</p>
         </x-card>
     </section>
 

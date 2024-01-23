@@ -76,23 +76,21 @@ class DataPackageManager implements PackageManager
         ];
     }
 
-    public function procesDelivery(Package $package, array $params): array
+    public function handleDelivery(Package $package, array $params): array
     {
-        try {
-            $data = Validator::make($params, $this->rules())->validated();
+        $data = Validator::make($params, $this->rules())->validated();
 
+        try {
             $response = $this->client->post('/data', [
                 ...$data,
                 'package_code' => $package->code
             ])->throw();
 
-            if ($response->ok() && ($response->json('status') === 'success')) return $response->json();
+            if (($response->json('status') !== 'success'))
+                throw new \Exception($response->json('message'));
 
-            throw new Exception('Data purchase failed: ' . $response->json('message'), ErrorCode::DELIVERY_FAILED);
-        } catch (HttpClientException $exception) {
-            logger()->error('Data purchase failed: ' . $exception->getMessage());
-            throw new Exception('Data purchase failed: ' . "something went wrong. Try again later", ErrorCode::DELIVERY_FAILED);
-        } catch (\Exception $exception) {
+            return $response->json();
+        }catch (\Exception $exception) {
             throw new Exception('Data purchase failed: ' . $exception->getMessage(), ErrorCode::DELIVERY_FAILED);
         }
     }

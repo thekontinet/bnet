@@ -24,7 +24,7 @@
         </div>
     </section>
 
-    <section class="py-4 bg-white space-y-4">
+    <section class="py-4 bg-white space-y-4 flex flex-col items-center justify-center min-h-60">
         <ul class="space-y-2 h-full overflow-y-auto">
             @forelse($transactions as $transaction)
                 <li class="flex items-center gap-2 hover:bg-blue-100 px-8">

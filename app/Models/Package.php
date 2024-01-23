@@ -11,6 +11,9 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property ServiceEnum $service
+ */
 class Package extends Model implements Product
 {
     use HasFactory;
@@ -34,9 +37,15 @@ class Package extends Model implements Product
         );
     }
 
+    public function isFixedPriceType(): bool
+    {
+        return $this->price_type == self::PRICE_TYPE_FIXED;
+    }
+
     public function getSellerPrice()
     {
-        return $this->tenants()->where('tenant_id', tenant('id'))->first()?->pivot;
+        return $this->tenants()
+            ->where('tenant_id', tenant('id'))->first()?->pivot;
     }
 
     public function sellPrice()

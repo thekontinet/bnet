@@ -9,6 +9,7 @@ use App\Models\Package;
 use App\Services\VtuProviders\Contracts\PackageManager;
 use http\Exception\InvalidArgumentException;
 use Illuminate\Http\Client\HttpClientException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -48,7 +49,7 @@ class AirtimePackageManager implements  PackageManager
                 'description' => '',
                 'price_type' => Package::PRICE_TYPE_DISCOUNT,
                 'price' => 0,
-                'discount' => 1
+                'discount' => 2
             ],
             [
                 'uuid' => Str::uuid(),
@@ -58,7 +59,7 @@ class AirtimePackageManager implements  PackageManager
                 'description' => '',
                 'price_type' => Package::PRICE_TYPE_DISCOUNT,
                 'price' => 0,
-                'discount' => 1
+                'discount' => 2
             ],
             [
                 'uuid' => Str::uuid(),
@@ -68,7 +69,7 @@ class AirtimePackageManager implements  PackageManager
                 'description' => '',
                 'price_type' => Package::PRICE_TYPE_DISCOUNT,
                 'price' => 0,
-                'discount' => 1
+                'discount' => 2
             ],
             [
                 'uuid' => Str::uuid(),
@@ -78,7 +79,7 @@ class AirtimePackageManager implements  PackageManager
                 'description' => '',
                 'price_type' => Package::PRICE_TYPE_DISCOUNT,
                 'price' => 0,
-                'discount' => 1
+                'discount' => 2
             ]
         ];
     }
@@ -92,24 +93,27 @@ class AirtimePackageManager implements  PackageManager
         ];
     }
 
-    public function procesDelivery(Package $package, array $params): array
+    /**
+     * @throws \Exception
+     */
+    public function handleDelivery(Package $package, array $params): array
     {
+        $data = Validator::make($params, $this->rules(), [
+            'amount.min' => "Min amount required is " . money(50.00)
+        ])->validated();
+
+        $data['network_operator'] = $package->provider;
+
         try{
-            $data = Validator::make($params, $this->rules(), [
-                'amount.min' => "Min amount required is " . money(50.00)
-            ])->validated();
-
-            $data['network_operator'] = $package->provider;
-
             $response = $this->client->post('/airtime', $data)->throw();
 
-            if($response->ok() && ($response->json('status') === 'success')) return $response->json();
-            throw new Exception('Airtime purchase failed: ' . $response->json('message'), ErrorCode::DELIVERY_FAILED);
-        }catch (HttpClientException $exception){
-            logger()->error('Airtime purchase failed: ' . $exception->getMessage());
-            throw new Exception('Airtime purchase failed: ' . "something went wrong. Try again later", ErrorCode::DELIVERY_FAILED);
+            if (($response->json('status') !== 'success'))
+                throw new \Exception($response->json('message'));
+
+            return $response->json();
         }catch (\Exception $exception){
-            throw new Exception('Airtime purchase failed: ' . $exception->getMessage(), ErrorCode::DELIVERY_FAILED);
+            logger()->error('Airtime purchase failed: ' . $exception->getMessage());
+            throw new Exception('Airtime purchase failed: ' . "Airtime recharge failed to deliver", ErrorCode::DELIVERY_FAILED);
         }
     }
 }

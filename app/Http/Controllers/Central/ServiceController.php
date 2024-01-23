@@ -16,50 +16,38 @@ class ServiceController extends Controller
     {
     }
 
-    public function index()
+    public function edit(Request $request, ?ServiceEnum $service = null)
     {
-        return view('service.index');
-    }
-
-    public function edit(Request $request, ServiceEnum $service)
-    {
-        if(Cache::lock('user' . auth()->id() . 'service-lock', 300, auth()->id())){
-            $this->packageService->syncTenantPackages(auth()->user());
-        }
-
-        $data = [
+        return view('service.index', [
             'service' => $service,
-            'packages' => []
-        ];
-
-
-        $data['providers'] = Package::query()
-            ->where('service', $service)
-            ->distinct('provider')
-            ->pluck('provider');
-
-        if($request->get('provider')){
-            $data['packages'] = Auth::user()->packages()
+            'providers' => $service ? Package::query()
+                ->where('service', $service)
+                ->distinct('provider')
+                ->pluck('provider') : null,
+            'packages' => $request->query('provider') ? Auth::user()->packages()
+                ->orderBy('package_id')
                 ->where('service', $service)
                 ->where('provider', $request->get('provider'))
-                ->get();
-        }
-
-        return view('service.edit', $data);
+                ->get() : null
+        ]);
     }
 
     public function update(Request $request, ServiceEnum $service)
     {
         $request->validate([
-            'form.*' => ['required', 'decimal:2', 'money', 'numeric']
+            'form.*' => $service->pricingTypeIsFixed() ?
+                ['required', 'decimal:2', 'money', 'numeric']:
+                ['required', 'numeric', 'max:100', 'min:1']
         ], [
             'form.*.required' => 'required',
             'form.*.decimal' => 'invalid format. 2 decimal place number required'
         ]);
 
-        $data = array_map(fn($value) =>  $value * 100, $request->get('form'));
+        $data = $request->get('form');
 
-        $this->packageService->updateTenantPackages(\auth()->user(), $data);
+        $packages = Package::query()->whereIn('id', array_keys($data))->get();
+
+        $this->packageService->addPackagesToTenant($packages, auth()->user(), $data, true);
 
         return back()->with('message', 'Packages has been updated');
     }

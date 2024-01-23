@@ -15,6 +15,11 @@ class Subscription extends Model
         'expires_at' => 'datetime'
     ];
 
+    public function hasExpired(): bool
+    {
+        return $this->plan?->expires_at->isPast();
+    }
+
     public function plan()
     {
         return $this->belongsTo(Plan::class);

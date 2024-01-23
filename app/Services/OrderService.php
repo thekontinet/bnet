@@ -89,12 +89,12 @@ class OrderService
     public function handleDelivery(Order $order): void
     {
         try{
-            $reponse = $order->item->service->processor()
-                ->procesDelivery($order->item, [...$order->data, 'customer_reference' => $order->reference]);
+            $deliveryService = app(VirtualTopupService::class, ['service' => $order->item->service]);
+            $reponse = $deliveryService->subscribe($order->item, $order->data);
 
             $order->fill([
                 'status' => Order::STATUS_DELIVERED,
-                'data' => [...$order['data'], 'delivery_response' => $reponse],
+                'data' => [...$order->data, 'delivery_response' => $reponse],
                 'profit' => $order->total - $order->data['cost_price']
             ])->save();
 

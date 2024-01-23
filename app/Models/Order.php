@@ -2,9 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Contracts\Product;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property Product $item
+ * @property array|null $data
+ * @property mixed $reference
+ * @property mixed $total
+ */
 class Order extends Model
 {
     use HasFactory;

@@ -1,4 +1,4 @@
-<form class="mt-8" method="post" action="{{route('services.update', $service)}}">
+<form method="post" action="{{route('services.update', $service)}}">
     @csrf
     @foreach($packages as $package)
         <!-- Package -->

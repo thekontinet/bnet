@@ -30,8 +30,7 @@ Route::middleware([
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    Route::get('/services', [ServiceController::class, 'index'])->name('services.index');
-    Route::get('/services/{service}/edit', [ServiceController::class, 'edit'])->name('services.edit');
+    Route::get('/services/{service?}', [ServiceController::class, 'edit'])->name('services.index');
     Route::post('/services/{service}', [ServiceController::class, 'update'])->name('services.update');
 
     Route::get('/fund', [FundWalletController::class, 'create'])->name('deposit.create');

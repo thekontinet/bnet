@@ -10,9 +10,9 @@ class DomainController extends Controller
 {
     public function store(Request $request)
     {
-        $mainDomain = $request->host();
+        $mainDomains = implode(',', config('tenancy.central_domains'));
         $request->validateWithBag('domainCreated', [
-           'domain' => ['required', 'string', "ends_with:$mainDomain",  'regex:/^(?:[-A-Za-z0-9]+\.)+[A-Za-z]{2,6}$/', 'unique:domains,domain']
+           'domain' => ['required', 'string', "doesnt_end_with:$mainDomains",  'regex:/^(?:[-A-Za-z0-9]+\.)+[A-Za-z]{2,6}$/', 'unique:domains,domain']
         ], [
             'domain.regex' => 'invalid domain name'
         ]);

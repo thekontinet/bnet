@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\Tenant\FundWalletController;
 use App\Http\Controllers\Tenant\Authentication\PasswordController;
 use App\Http\Controllers\Tenant\Authentication\TenantAuthenticatedSessionController;
 use App\Http\Controllers\Tenant\Authentication\TenantRegisterController;
 use App\Http\Controllers\Tenant\DashboardController;
+use App\Http\Controllers\Tenant\FundWalletController;
 use App\Http\Controllers\Tenant\ProfileController;
-use App\Http\Controllers\Tenant\Services\RechargeServiceController;
+use App\Http\Controllers\Tenant\RechargeServiceController;
 use App\Http\Controllers\Tenant\SettingsController;
 use App\Http\Controllers\Tenant\TransactionController;
 use Illuminate\Support\Facades\Route;
@@ -65,4 +65,7 @@ Route::middleware([
         Route::get('/login', [TenantAuthenticatedSessionController::class, 'create'])->name('login');
         Route::post('/login', [TenantAuthenticatedSessionController::class, 'store']);
     });
+
+    // TODO: Password Reset for customers
+    // TODO: Email Verification for customers
 });

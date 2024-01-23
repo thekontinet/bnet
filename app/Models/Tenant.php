@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\Config;
 use App\Models\Contracts\Customer as CustomerContract;
 use App\Models\Contracts\HasSubscription;
+use App\Models\Contracts\HasTenantSettings;
 use App\Models\Contracts\Payable;
 use Illuminate\Auth\Authenticatable;
 use Illuminate\Auth\MustVerifyEmail;
@@ -40,7 +41,7 @@ class Tenant extends BaseTenant implements
         Notifiable,
         Payable,
         HasSubscription,
-        HasSettings;
+        HasTenantSettings;
 
     protected $guarded = [];
 

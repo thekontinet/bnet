@@ -1,18 +1,14 @@
 <?php
 
-namespace App\Http\Controllers\Tenant\Services;
+namespace App\Http\Controllers\Tenant;
 
-use App\Enums\ErrorCode;
 use App\Enums\ServiceEnum;
 use App\Http\Controllers\BaseTenantController;
-use App\Http\Controllers\Controller;
 use App\Models\Package;
 use App\Services\OrderService;
 use App\Services\VirtualTopupService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
-use MannikJ\Laravel\Wallet\Exceptions\UnacceptedTransactionException;
 
 class RechargeServiceController extends BaseTenantController
 {
@@ -33,6 +29,7 @@ class RechargeServiceController extends BaseTenantController
      */
     public function store(Request $request, OrderService $orderService)
     {
+        // Validate the incoming request data
         $request->validate([
             'package_id' => [
                 'required',
@@ -42,28 +39,50 @@ class RechargeServiceController extends BaseTenantController
         ]);
 
         /**
-         * TODO: add feature to help switch a service on or off so
-         * TODO: user cannot purchase if its off
+         * TODO: Add feature to help switch a service on or off so
+         * TODO: users cannot purchase if it's off.
          */
 
-        $package = tenant()->packages()->find($request->get('package_id'));
+        $package = tenant()->packages()->find($request->input('package_id'));
+
+        if (!$package) {
+            return redirect()->route('tenant.dashboard')->with('error', 'Invalid package selected.');
+        }
+
+        // Get the authenticated customer
         $customer = $request->user();
 
-        $processor = ServiceEnum::tryFrom($package->service->value)->processor();
-        $order = $orderService->create($package, $customer, $request->validate($processor->rules()));
+        // Create an instance of VirtualTopupService based on the selected package's service
+        $vtuService = app(VirtualTopupService::class, [$package->service]);
 
-        //TODO: Dispatch these to jobs
-        $orderService->processPaymentAndDeliver($order);
+        try {
+            $order = $orderService->create($package, $customer, $request->validate($request->all()));
+            $orderService->processPayment($order);
 
-        return redirect()->route('tenant.dashboard')->with('message', 'airtime purchase success');
+            $repsonse = $vtuService->subscribe($package, $request);
+
+            $orderService->processPaymentAndDeliver($order);
+
+            $order->markAsDelivered();
+
+            // TODO: Dispatch these to jobs
+            // $orderService->processPaymentAndDeliver($order);
+
+            // Redirect to the tenant's dashboard with a success message
+            return redirect()->route('tenant.dashboard')->with('success', 'Airtime purchase success.');
+        } catch (\Exception $e) {
+            // Handle exceptions, log the error, and provide user-friendly feedback
+            return redirect()->route('tenant.dashboard')->with('error', 'An error occurred during the purchase process.');
+        }
     }
+
 
     /**
      * @throws \Exception
      */
     public function update(Request $request, Package $package, OrderService $orderService)
     {
-//        $package->tenants()->findOrFail(tenant('id'));
+        $package->tenants()->findOrFail(tenant('id'));
 
         /**
          * TODO: add feature to help switch a service on or off so
@@ -72,7 +91,7 @@ class RechargeServiceController extends BaseTenantController
 
         $customer = $request->user();
 
-        $processor = ServiceEnum::tryFrom($package->service->value)->processor();
+        $processor = ServiceEnum::tryFrom($package->service->value)->getPackageManger();
 
         $order = $orderService->create($package, $customer, $request->validate($processor->rules()));
 

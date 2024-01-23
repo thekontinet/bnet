@@ -32,6 +32,8 @@ return new class extends Migration
             $table->integer('price');
             $table->integer('discount')->default(0);
             $table->timestamps();
+
+            $table->unique(['package_id', 'tenant_id']);
         });
     }
 

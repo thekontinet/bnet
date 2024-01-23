@@ -1,10 +1,13 @@
-<x-tenant::layouts.guest>
-    <section class="flex flex-col items-center justify-center min-h-screen w-full">
-        <div class="max-w-[100px] w-full mx-auto">
-            <x-tenant::application-logo/>
-        </div>
-        <h4 class="text-lg font-medium mb-4">Create A New Account</h4>
-        <form class="w-full px-8 py-12" action="{{route('tenant.register')}}" method="post">
+<x-tenant::layouts.guest class="flex flex-col gap-8 items-center justify-center p-4">
+    <section class="w-full shadow py-12 px-8">
+        <header>
+            <div class="mb-2 size-24 border border-slate-700 flex items-center justify-center rounded-full">
+                <x-tenant::application-logo/>
+            </div>
+            <h4 class="text-lg font-medium">Create a New Account</h4>
+            <p class="text-sm text-slate-400">Complete the form to create a new account</p>
+        </header>
+        <form class="w-full mt-4" action="{{route('tenant.register')}}" method="post">
             @csrf
 
             <!-- Firstname -->
@@ -60,8 +63,8 @@
 
             <div class="mt-4 flex flex-col items-start gap-2">
                 <x-tenant::primary-button>Create Account</x-tenant::primary-button>
-                <a href="{{route('tenant.login')}}" class="underline">I already have an account</a>
             </div>
         </form>
     </section>
+    <a href="{{route('tenant.login')}}" class="text-slate-500">Take me to login</a>
 </x-tenant::layouts.guest>

@@ -30,7 +30,7 @@ class FakePackageManager implements  PackageManager
         return [];
     }
 
-    public function procesDelivery(Package $package, array $params): array
+    public function handleDelivery(Package $package, array $params): array
     {
         return [];
     }
