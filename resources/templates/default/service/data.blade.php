@@ -21,7 +21,7 @@
                 <div class="space-y-2 h-[200px] overflow-y-auto py-4">
                     @foreach($packages as $package)
                         <x-tenant::primary-button class="w-full" formaction="{{ route('tenant.package.purchase', $package) }}">
-                            Purchase {{$package->title}}
+                            Purchase {{$package->title}} @ {{money($package->getPrice(auth()->user()))}}
                         </x-tenant::primary-button>
                     @endforeach
                 </div>

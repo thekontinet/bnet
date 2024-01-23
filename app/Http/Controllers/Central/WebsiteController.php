@@ -17,7 +17,7 @@ class WebsiteController extends Controller
     public function update(Request $request)
     {
         $validated = $request->validateWithBag('websiteUpdated', [
-            'logo' => ['required', 'file', 'mimes:jpeg,png,jpg', 'max:2048'],
+            'logo' => ['nullable', 'file', 'mimes:jpeg,png,jpg', 'max:2048'],
             'brand_name' => ['required', 'string'],
             'brand_description' => ['required', 'string', 'max:150'],
         ]);
