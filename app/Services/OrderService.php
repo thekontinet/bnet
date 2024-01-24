@@ -63,6 +63,9 @@ class OrderService
 
 
         $order->owner->pay($order->item);
+        $order->fill([
+            'status' => Order::STATUS_PAID,
+        ])->save();
     }
 
     /**

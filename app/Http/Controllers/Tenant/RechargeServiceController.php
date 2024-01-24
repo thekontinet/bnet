@@ -52,15 +52,11 @@ class RechargeServiceController extends BaseTenantController
         // Get the authenticated customer
         $customer = $request->user();
 
-        // Create an instance of VirtualTopupService based on the selected package's service
-        $vtuService = app(VirtualTopupService::class, [$package->service]);
-
         try {
             $order = $orderService->create($package, $customer, $request->validate($request->all()));
             $orderService->processPaymentAndDeliver($order);
 
             // TODO: Dispatch these to jobs
-            // $orderService->processPaymentAndDeliver($order);
 
             // Redirect to the tenant's dashboard with a success message
             return redirect()->route('tenant.dashboard')->with('success', 'Airtime purchase success.');
