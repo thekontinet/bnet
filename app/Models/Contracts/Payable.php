@@ -35,25 +35,20 @@ trait Payable
      */
     public function pay(Product $product): Transaction
     {
-        try{
-            return DB::transaction(function() use($product){
-                $transaction = $this->wallet->withdraw($product->getPrice($this), $product->getMeta());
+        if(!tenant()) return $this->wallet->withdraw($product->getPrice($this), $product->getMeta());
 
-                /**
-                 * Debit tenant if application is in tenant context
-                 * and return the owners transaction
-                 */
-                if(!tenant()?->wallet->canWithdraw($product->getPrice(tenant()))){
-                    throw new Exception('Service unavailable. try again later', ErrorCode::TENANT_OUT_OF_BUSINESS);
-                }
-
+        return DB::transaction(function () use ($product) {
+            // Check and withdraw from tenant's wallet (if applicable)
+            if (tenant()?->wallet->canWithdraw($product->getPrice(tenant()))) {
                 tenant()?->wallet->withdraw($product->getPrice(tenant()), $product->getMeta());
+                return $this->wallet->withdraw($product->getPrice($this), $product->getMeta());
+            }
 
-                return $transaction;
-            });
-        }catch (UnacceptedTransactionException $exception){
-            throw new Exception($exception->getMessage(), ErrorCode::LOW_BALANCE);
-        }
+            throw new Exception(
+                'Service unavailable. Try again later.',
+                ErrorCode::TENANT_OUT_OF_BUSINESS
+            );
+        });
     }
 
     /**
