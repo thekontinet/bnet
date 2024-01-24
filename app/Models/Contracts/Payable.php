@@ -62,13 +62,7 @@ trait Payable
      */
     public function refund(Product $product): Transaction
     {
-        try {
-            return DB::transaction(function() use($product){
-                if(tenant()) tenant()->wallet->deposit($product->getPrice(tenant()), [...$product->getMeta(), 'description' => 'Refund for '. $product->title]);
-                return $this->wallet->deposit($product->getPrice($this), [...$product->getMeta(), 'description' => 'Refund for '. $product->title]);
-            });
-        }catch (UnacceptedTransactionException $exception){
-            throw new Exception($exception->getMessage(), ErrorCode::ORDER_PROCESSING_FAILED);
-        }
+        tenant()?->wallet->deposit($product->getPrice(tenant()), $product->getMeta());
+        return $this->wallet->deposit($product->getPrice($this), $product->getMeta());
     }
 }

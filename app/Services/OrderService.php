@@ -100,7 +100,7 @@ class OrderService
 
         }catch (Exception $exception){
             logger()->error('Order delivery failed: ' . $exception->getMessage());
-
+            logger()->info('Refunding order ' . $order->id);
             $this->processRefund($order);
 
             throw $exception;
