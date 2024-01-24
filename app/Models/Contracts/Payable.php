@@ -43,15 +43,11 @@ trait Payable
                  * Debit tenant if application is in tenant context
                  * and return the owners transaction
                  */
-                if(!tenant()) {
-                   return $transaction;
-                }
-
-                if(!tenant()->wallet->canWithdraw($product->getPrice(tenant()))){
+                if(!tenant()?->wallet->canWithdraw($product->getPrice(tenant()))){
                     throw new Exception('Service unavailable. try again later', ErrorCode::TENANT_OUT_OF_BUSINESS);
                 }
 
-                tenant()->wallet->withdraw($product->getPrice(tenant()), $product->getMeta());
+                tenant()?->wallet->withdraw($product->getPrice(tenant()), $product->getMeta());
 
                 return $transaction;
             });
