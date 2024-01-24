@@ -75,14 +75,11 @@ class OrderService
     public function processRefund(Order $order): void
     {
         if($order->isPaid()){
-            DB::transaction(function() use($order){
-                $order->owner->refund($order->item);
-                $order->fill([
-                    'status' => Order::STATUS_FAILED,
-                    'profit' => 0
-                ])->save();
-                $order->save();
-            });
+            $order->owner->refund($order->item);
+            $order->fill([
+                'status' => Order::STATUS_FAILED,
+                'profit' => 0
+            ])->save();
         }
     }
 
