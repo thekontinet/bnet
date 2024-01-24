@@ -64,11 +64,11 @@ trait Payable
     {
         tenant()?->wallet->deposit($product->getPrice(tenant()), [
             ...$product->getMeta(),
-            'description' => "Refund for  $product->title purchased by $this->email"
+            'description' => "$product->title Refund to $this->email"
         ]);
         return $this->wallet->deposit($product->getPrice($this), [
             ...$product->getMeta(),
-            'description' => 'Refund for ' . $product->title
+            'description' => "$product->title Refund"
         ]);
     }
 }
