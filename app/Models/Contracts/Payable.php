@@ -62,7 +62,13 @@ trait Payable
      */
     public function refund(Product $product): Transaction
     {
-        tenant()?->wallet->deposit($product->getPrice(tenant()), $product->getMeta());
-        return $this->wallet->deposit($product->getPrice($this), $product->getMeta());
+        tenant()?->wallet->deposit($product->getPrice(tenant()), [
+            ...$product->getMeta(),
+            'description' => "Refund for  $product->title purchased by $this->email"
+        ]);
+        return $this->wallet->deposit($product->getPrice($this), [
+            ...$product->getMeta(),
+            'description' => 'Refund for ' . $product->title
+        ]);
     }
 }
