@@ -1,7 +1,7 @@
 <x-tenant::layouts.guest class="flex flex-col gap-8 items-center justify-center p-4">
     <section class="w-full shadow py-12 px-8">
         <header>
-            <div class="mb-2 size-24 border border-slate-700 flex items-center justify-center rounded-full">
+            <div class="mb-2 size-24 border border-slate-700 flex items-center justify-center rounded-full overflow-hidden">
                 <x-tenant::application-logo/>
             </div>
             <h4 class="text-lg font-medium">Login</h4>

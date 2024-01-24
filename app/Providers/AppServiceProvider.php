@@ -39,7 +39,6 @@ class AppServiceProvider extends ServiceProvider
         $this->loadViewsFrom(resource_path('templates/default'), 'template');
         Schema::defaultStringLength(191);
 
-
         app()->singleton(Gateway::class, function($app){
             return new Paystack;
         });

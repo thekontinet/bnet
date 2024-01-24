@@ -17,7 +17,7 @@ class Subscription extends Model
 
     public function hasExpired(): bool
     {
-        return $this->plan?->expires_at->isPast();
+        return $this->plan?->expires_at?->isPast() ?? false;
     }
 
     public function plan()
