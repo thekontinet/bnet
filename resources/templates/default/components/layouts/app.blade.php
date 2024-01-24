@@ -16,7 +16,7 @@
     <div class="flex-1 overflow-y-auto">
         {{$slot}}
     </div>
-   <footer>
+   <footer class="">
        <x-tenant::layouts.bottom-navigation/>
    </footer>
 </main>

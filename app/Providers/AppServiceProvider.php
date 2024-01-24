@@ -8,6 +8,8 @@ use App\Models\Customer;
 use App\Models\Tenant;
 use App\Services\Gateways\Contracts\Gateway;
 use App\Services\Gateways\Paystack;
+use App\Services\VtuProviders\Contracts\PackageManager;
+use App\Services\VtuProviders\FakePackageManager;
 use Illuminate\Auth\Events\Authenticated;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
@@ -36,6 +38,7 @@ class AppServiceProvider extends ServiceProvider
         Blade::anonymousComponentPath(resource_path('templates/default/components'), 'tenant');
         $this->loadViewsFrom(resource_path('templates/default'), 'template');
         Schema::defaultStringLength(191);
+
 
         app()->singleton(Gateway::class, function($app){
             return new Paystack;

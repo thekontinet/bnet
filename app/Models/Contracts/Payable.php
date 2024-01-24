@@ -36,24 +36,27 @@ trait Payable
     public function pay(Product $product): Transaction
     {
         try {
-            DB::beginTransaction();
-            if(!tenant()) return $this->wallet->withdraw($product->getPrice($this), $product->getMeta());
-
-            if (!tenant()?->wallet->canWithdraw($product->getPrice(tenant()))) {
+            if(!$this->tenant->wallet->canWithdraw($product->getPrice($this->tenant))){
                 throw new Exception(
-                    'Service unavailable. Try again later.',
+                    'Tenant balance is low',
                     ErrorCode::TENANT_OUT_OF_BUSINESS
                 );
             }
 
-            tenant()?->wallet->withdraw($product->getPrice(tenant()), $product->getMeta());
-            $transaction = $this->wallet->withdraw($product->getPrice($this), $product->getMeta());
-
-            DB::commit();
-            return $transaction;
+            return DB::transaction(function() use($product){
+                $this->tenant->wallet->withdraw($product->getPrice($this->tenant));
+                return $this->wallet->withdraw($product->getPrice($this), $product->getMeta());
+            });
+        }catch (UnacceptedTransactionException $e){
+            throw new Exception("Payment for Product:$product?->title failed: " . $e->getMessage(), ErrorCode::TRANSACTION_ERROR);
         }catch (Exception $e){
-            DB::rollBack();
-            throw new Exception($e->getMessage(), ErrorCode::LOW_BALANCE);
+            logger()->error("Payment for Product:$product?->id failed: " . $e->getMessage());
+
+            if($e->getCode() === ErrorCode::TENANT_OUT_OF_BUSINESS){
+                throw new Exception("Payment unavailable. Please try again later.", ErrorCode::TRANSACTION_ERROR);
+            }
+
+            throw new Exception("Payment for Product:$product?->title failed", ErrorCode::TRANSACTION_ERROR);
         }
     }
 
@@ -62,13 +65,15 @@ trait Payable
      */
     public function refund(Product $product): Transaction
     {
-        tenant()?->wallet->deposit($product->getPrice(tenant()), [
-            ...$product->getMeta(),
-            'description' => "Transaction refund"
-        ]);
-        return $this->wallet->deposit($product->getPrice($this), [
-            ...$product->getMeta(),
-            'description' => "Transaction refund"
-        ]);
+        return DB::transaction(function() use($product){
+            tenant()?->wallet->deposit($product->getPrice(tenant()), [
+                ...$product->getMeta(),
+                'description' => "Transaction refund"
+            ]);
+            return $this->wallet->deposit($product->getPrice($this), [
+                ...$product->getMeta(),
+                'description' => "Transaction refund"
+            ]);
+        });
     }
 }

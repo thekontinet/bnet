@@ -6,6 +6,7 @@ use App\Enums\ErrorCode;
 use App\Models\Contracts\Customer;
 use App\Models\Contracts\Product;
 use App\Models\Order;
+use App\Models\Transaction;
 use App\Services\VtuProviders\Contracts\PackageManager;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -56,16 +57,18 @@ class OrderService
      *
      * @throws Exception If the payment has already been successful or if any errors occur during payment processing.
      */
-    public function processPayment(Order $order): void
+    public function processPayment(Order $order): Transaction
     {
         if($order->isDelivered() || $order->isPaid())
             throw new Exception("Order has already been payed", ErrorCode::ORDER_PROCESSING_FAILED);
 
 
-        $order->owner->pay($order->item);
-        $order->fill([
-            'status' => Order::STATUS_PAID,
-        ])->save();
+        return DB::transaction(function() use($order){
+            $order->fill([
+                'status' => Order::STATUS_PAID,
+            ])->save();
+            return $order->owner->pay($order->item);
+        });
     }
 
     /**
@@ -77,12 +80,16 @@ class OrderService
      */
     public function processRefund(Order $order): void
     {
+        logger()->info('Refunding order ' . $order->id);
+
         if($order->isPaid()){
-            $order->owner->refund($order->item);
-            $order->fill([
-                'status' => Order::STATUS_FAILED,
-                'profit' => 0
-            ])->save();
+            DB::transaction(function() use($order){
+                $order->owner->refund($order->item);
+                $order->fill([
+                    'status' => Order::STATUS_FAILED,
+                    'profit' => 0
+                ])->save();
+            });
         }
     }
 
@@ -100,12 +107,8 @@ class OrderService
                 'data' => [...$order->data, 'delivery_response' => $reponse],
                 'profit' => $order->total - $order->data['cost_price']
             ])->save();
-
         }catch (Exception $exception){
-            logger()->error('Order delivery failed: ' . $exception->getMessage());
-            logger()->info('Refunding order ' . $order->id);
             $this->processRefund($order);
-
             throw $exception;
         }
     }

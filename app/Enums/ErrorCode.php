@@ -8,7 +8,7 @@ enum ErrorCode: int
 
     const ORDER_PROCESSING_FAILED = 600;
 
-    const LOW_BALANCE = 601;
+    const TRANSACTION_ERROR = 601;
 
     const TENANT_OUT_OF_BUSINESS = 602; // code for tenent low balance when client is purchasing
 

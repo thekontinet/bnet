@@ -37,7 +37,8 @@ enum ServiceEnum: string
 
     public function getPackageManger(): PackageManager
     {
-//        if(!app()->isProduction()) return app(FakePackageManager::class);
+        // TODO: Instead of doing this, add on and off for these services
+        if(!app()->isProduction()) return app(FakePackageManager::class);
 
         return match ($this){
             ServiceEnum::AIRTIME => app(AirtimePackageManager::class),

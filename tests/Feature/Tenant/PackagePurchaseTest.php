@@ -2,8 +2,11 @@
 
 namespace Tests\Feature\Tenant;
 
+use App\Enums\ErrorCode;
 use App\Enums\ServiceEnum;
 use App\Models\Package;
+use App\Services\VirtualTopupService;
+use App\Services\VtuProviders\FakePackageManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TenantTestCase;
@@ -121,5 +124,27 @@ class PackagePurchaseTest extends TenantTestCase
         $response->assertRedirect();
         $response->assertSessionHas('error');
         $this->assertBalancesAfterPurchase($this->userWalletBalance, 0);
+    }
+
+    public function test_user_refunded_if_order_delivery_fails()
+    {
+        $package = $this->createPackage(ServiceEnum::AIRTIME, 0, '0.02', Package::PRICE_TYPE_DISCOUNT);
+        tenant()->packages()->attach($package, ['discount' => '0.02', 'price' => 0]);
+
+
+        $this->partialMock(FakePackageManager::class)
+            ->shouldReceive('handleDelivery')
+            ->andThrow(\Exception::class, code: ErrorCode::DELIVERY_FAILED);
+
+        $response = $this->purchasePackage($package, [
+            'amount' => '50.00',
+            'phone' => '0900000000',
+            'package_id' => $package->id,
+        ]);
+
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error');
+        $this->assertBalancesAfterPurchase($this->userWalletBalance, $this->tenantWalletBalance);
     }
 }
