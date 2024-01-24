@@ -76,8 +76,12 @@ class OrderService
     {
         if($order->isPaid()){
             DB::transaction(function() use($order){
+                global $data;
                 $order->owner->refund($order->item);
-                $order->status = Order::STATUS_FAILED;
+                $order->fill([
+                    'status' => Order::STATUS_FAILED,
+                    'profit' => 0
+                ])->save();
                 $order->save();
             });
         }
@@ -101,10 +105,7 @@ class OrderService
         }catch (Exception $exception){
             logger()->error('Order delivery failed: ' . $exception->getMessage());
 
-            if($exception->getCode() === ErrorCode::DELIVERY_FAILED){
-                // Dispatch this to job
-                $this->processRefund($order);
-            }
+            $this->processRefund($order);
 
             throw $exception;
         }

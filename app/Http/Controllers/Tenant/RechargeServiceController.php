@@ -57,13 +57,7 @@ class RechargeServiceController extends BaseTenantController
 
         try {
             $order = $orderService->create($package, $customer, $request->validate($request->all()));
-            $orderService->processPayment($order);
-
-            $repsonse = $vtuService->subscribe($package, $request);
-
             $orderService->processPaymentAndDeliver($order);
-
-            $order->markAsDelivered();
 
             // TODO: Dispatch these to jobs
             // $orderService->processPaymentAndDeliver($order);
