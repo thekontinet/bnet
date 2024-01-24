@@ -76,7 +76,6 @@ class OrderService
     {
         if($order->isPaid()){
             DB::transaction(function() use($order){
-                global $data;
                 $order->owner->refund($order->item);
                 $order->fill([
                     'status' => Order::STATUS_FAILED,
