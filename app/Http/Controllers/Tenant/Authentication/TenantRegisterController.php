@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
@@ -35,8 +36,8 @@ class TenantRegisterController extends BaseTenantController
         $request->validate([
             'firstname' => ['required', 'string', 'max:255'],
             'lastname' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:14', 'unique:'.Customer::class],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.Customer::class],
+            'phone' => ['required', 'string', 'max:14', Rule::unique(Customer::class)->where('tenant_id', tenant('id'))],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(Customer::class)->where('tenant_id', tenant('id'))],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
