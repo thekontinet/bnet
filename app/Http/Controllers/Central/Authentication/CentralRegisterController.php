@@ -32,20 +32,17 @@ class CentralRegisterController extends Controller
     {
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'lowercase', 'alpha_num', 'max:255', 'unique:'.Tenant::class],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.Tenant::class],
+            'phone' => ['required', 'string', 'max:14', 'min:10', 'starts_with:+234', 'unique:'.Tenant::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         $tenant = Tenant::query()->create([
             'name' => $request->name,
-            'username' => $request->username,
             'email' => $request->email,
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
         ]);
-
-        $tenant->createDomain($tenant->username . '.' . $request->getHost());
 
         event(new Registered($tenant));
 

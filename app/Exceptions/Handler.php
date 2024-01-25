@@ -32,7 +32,7 @@ class Handler extends ExceptionHandler
         $this->renderable(function (\Exception $e) {
             logger()->error($e->getMessage());
 
-            if($e->getCode() != 0) return redirect('/dashboard')
+            if(ErrorCode::exist($e->getCode())) return redirect()->back()
                 ->with('error', ErrorCode::getMessage($e->getCode()) ?? $e->getMessage());
 
             return null;

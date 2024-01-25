@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-enum ErrorCode: int
+enum ErrorCode: string
 {
     const DELIVERY_FAILED = 700;
 
@@ -11,6 +11,11 @@ enum ErrorCode: int
     const TRANSACTION_ERROR = 601;
 
     const TENANT_OUT_OF_BUSINESS = 602; // code for tenent low balance when client is purchasing
+
+    public static function exist($code)
+    {
+        return collect(self::cases())->pluck('value')->contains($code);
+    }
 
     public static function getMessage(int $code): ?string
     {

@@ -13,6 +13,7 @@ use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
 use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\Access\Authorizable;
@@ -56,7 +57,7 @@ class Tenant extends BaseTenant implements
         return [
             'id',
             'name',
-            'username',
+            'phone',
             'email',
             'email_verified_at',
             'password',
@@ -66,6 +67,28 @@ class Tenant extends BaseTenant implements
     public function getLogoUrl()
     {
         return $this->logo ? Storage::url($this->logo) : 'https://via.placeholder.com/150';
+    }
+
+    public function domain(): Attribute
+    {
+        return new Attribute(
+            get: fn()=> $this->domains->last()
+        );
+    }
+
+    public function websiteUrl(): Attribute
+    {
+        $domain = str($this->domain?->domain);
+        return new Attribute(function () use($domain){
+            if (str($domain)->isUrl()) {
+                $domainWithProtocol = $domain->toString();
+            } else {
+                $domainWithProtocol = $domain->prepend('https://');
+
+            }
+
+            echo $domainWithProtocol;
+        });
     }
 
     public function packages()

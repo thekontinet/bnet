@@ -11,6 +11,7 @@ use App\Http\Controllers\Central\SettingsController;
 use App\Http\Controllers\Central\SubscriptionController;
 use App\Http\Controllers\Central\WebsiteController;
 use App\Http\Middleware\MustCompleteRequiredSetup;
+use App\Http\Middleware\TenantMustHaveDomain;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -22,9 +23,18 @@ Route::get('/dashboard', DashboardController::class)
     ->middleware(['auth', 'verified', MustCompleteRequiredSetup::class])
     ->name('dashboard');
 
-// TODO: Force tenant to upload one payment option before activating account
 Route::middleware([
     'auth'
+])->group(function(){
+    Route::get('domains/create', [DomainController::class, 'create'])->name('domain.create');
+    Route::post('domains', [DomainController::class, 'store'])->name('domain.store');
+    Route::delete('domains', [DomainController::class, 'destroy'])->name('domain.destroy');
+});
+
+// TODO: Force tenant to upload one payment option before activating account
+Route::middleware([
+    'auth',
+    TenantMustHaveDomain::class
 ])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -46,9 +56,6 @@ Route::middleware([
 
     Route::get('sites', [WebsiteController::class, 'edit'])->name('site');
     Route::post('sites', [WebsiteController::class, 'update']);
-
-    Route::post('domains', [DomainController::class, 'store'])->name('domain');
-    Route::put('domains', [DomainController::class, 'update']);
 
     Route::get('/settings/{type}', [SettingsController::class, 'edit'])->name('settings.edit');
     Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');

@@ -4,10 +4,7 @@ $navitems = [
         'href' => route('dashboard'),
         'active' => request()->routeIs('dashboard'),
     ],
-    'Services' => [
-        'href' => route('services.index'),
-        'active' => request()->routeIs('services.*'),
-    ],
+
     'Customers' => [
         'href' => route('customer.index'),
         'active' => request()->routeIs('customer.index'),
@@ -15,7 +12,11 @@ $navitems = [
     'Orders' => [
         'href' => route('order.index'),
         'active' => request()->routeIs('order.index'),
-    ]
+    ],
+    'Pricing Configuration' => [
+        'href' => route('services.index'),
+        'active' => request()->routeIs('services.*'),
+    ],
 ];
 
 $dropitems = [

@@ -20,6 +20,13 @@ class Subscription extends Model
         return $this->plan?->expires_at?->isPast() ?? false;
     }
 
+    public function willSoonExpire(): bool
+    {
+        // Make the threshold updatable from tha admin panel
+        $expirationThreshold = now()->addDays(7);
+        return $this?->expires_at->isBefore($expirationThreshold) ?? false;
+    }
+
     public function plan()
     {
         return $this->belongsTo(Plan::class);

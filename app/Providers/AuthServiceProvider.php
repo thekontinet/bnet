@@ -7,11 +7,13 @@ use App\Enums\Config;
 use App\Exceptions\PaymentError;
 use App\Models\Customer;
 use App\Models\Tenant;
+use App\Policies\DomainPolicy;
 use App\Services\Gateways\Contracts\Gateway;
 use App\Services\Gateways\Paystack;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Auth;
+use Stancl\Tenancy\Database\Models\Domain;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -21,7 +23,6 @@ class AuthServiceProvider extends ServiceProvider
      * @var array<class-string, class-string>
      */
     protected $policies = [
-        //
     ];
 
     /**
@@ -29,6 +30,6 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-
+        $this->registerPolicies();
     }
 }

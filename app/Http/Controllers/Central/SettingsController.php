@@ -44,7 +44,7 @@ class SettingsController extends Controller
             Auth::user()->settings()->set($name, $value);
         }
 
-        return back()->with('message', 'upadated');
+        return redirect()->route('dashboard')->with('message', 'upadated');
     }
 
     public function makeForm(string $fields, ?string $title = null, ?string $description = null)

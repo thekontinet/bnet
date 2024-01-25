@@ -4,6 +4,15 @@ use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\ServiceProvider;
 
 return [
+    /*
+    |--------------------------------------------------------------------------
+    | Default Domain Extension
+    |--------------------------------------------------------------------------
+    |
+    | This value is the default extension for any provided domain name.
+    |
+    */
+    'default_domain_extension' => env('APP_DEFAULT_DOMAIN_EXTENSION', '.com.ng'),
 
     /*
     |--------------------------------------------------------------------------

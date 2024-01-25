@@ -38,6 +38,8 @@ return [
 
     'airtimenigeria' => [
         'api_key' => env('AIRTIME_NIGERIA_API_KEY'),
-    ]
+    ],
+
+    'whois_api_key' => env('WHOIS_API_KEY', '')
 
 ];

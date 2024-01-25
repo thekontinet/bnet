@@ -5,18 +5,27 @@
                 {{ __('Dashboard') }}
             </h2>
 
-            <a href="{{route('deposit.create')}}">
-                <x-primary-button class="flex-col">
-                    Fund Wallet
-                </x-primary-button>
+            <a href="{{request()->user()->website_url}}" target="_blank">
+                <x-secondary-button class="flex-col">
+                    Visit Website
+                </x-secondary-button>
             </a>
         </div>
     </x-slot>
 
-    <section class="py-12 max-w-7xl mx-auto sm:px-6 lg:px-8 grid lg:grid-cols-3 gap-4">
+    <section class="max-w-7xl py-6 mx-auto sm:px-6 lg:px-8">
+        <x-alert.no-subscription-plan/>
+    </section>
+
+    <section class="mb-4 max-w-7xl mx-auto sm:px-6 lg:px-8 grid lg:grid-cols-3 gap-4">
         <x-card class="text-gray-900">
             <h4 class="text-xs">Wallet Balance</h4>
             <p class="text-xl">{{money($tenant->wallet->balance)}}</p>
+            <a href="{{route('deposit.create')}}" class="mt-4 block">
+                <x-primary-button class="flex-col">
+                    Fund Wallet
+                </x-primary-button>
+            </a>
         </x-card>
         <x-card class="p-6 text-gray-900">
             <h4 class="text-xs">Customers</h4>

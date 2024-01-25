@@ -18,6 +18,11 @@
                             </th>
 
                             <th scope="col"
+                                class="px-12 py-3.5 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">
+                                <span>Ref</span>
+                            </th>
+
+                            <th scope="col"
                                 class="px-4 py-3.5 text-sm font-normal text-left rtl:text-right text-gray-500 dark:text-gray-400">
                                 <span>Date/Time</span>
                             </th>
@@ -56,7 +61,10 @@
                                     </p>
                                 </td>
                                 <td class="px-4 py-4 text-sm text-gray-500 dark:text-gray-300 whitespace-nowrap">
-                                    {{$order->created_at->diffForHumans()}}
+                                    {{$order->reference}}
+                                </td>
+                                <td class="px-4 py-4 text-sm text-gray-500 dark:text-gray-300 whitespace-nowrap">
+                                    {{$order->created_at->format('jS M Y h:i:s a')}}
                                 </td>
                                 <td class="px-4 py-4 text-sm text-gray-500 dark:text-gray-300 whitespace-nowrap">
                                     {{$order->owner->email}}
