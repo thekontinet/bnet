@@ -2,14 +2,8 @@
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Dashboard') }}
+                {{ __('All Order') }}
             </h2>
-
-            <a href="{{route('deposit.create')}}">
-                <x-primary-button class="flex-col">
-                    Fund Wallet
-                </x-primary-button>
-            </a>
         </div>
     </x-slot>
 

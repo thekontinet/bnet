@@ -15,7 +15,7 @@ class DisableIfNoSubscription
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if(tenant()->subscription->hasExpired()){
+        if(tenant()->subscription?->hasExpired()){
             abort(503);
         }
         return $next($request);

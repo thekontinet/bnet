@@ -86,6 +86,28 @@ class PackagePurchaseTest extends TenantTestCase
         $response->assertRedirect()->assertSessionHas('message');
     }
 
+    public function test_cannot_purchase_package_if_not_available()
+    {
+        $package = $this->createPackage(
+            ServiceEnum::DATA,
+            100.00,
+            '0',
+            Package::PRICE_TYPE_FIXED);
+        $package->update(['active' => false]);
+
+        tenant()->packages()->attach($package, ['price' => 200.00]);
+
+        $this->withoutExceptionHandling()
+            ->expectExceptionCode(ErrorCode::ORDER_PROCESSING_FAILED);
+
+        $response = $this->purchasePackage($package, [
+            'phone' => '0900000000',
+            'package_id' => $package->id,
+        ]);
+
+        $response->assertRedirect()->assertSessionHas('error');
+    }
+
     public function test_purchase_fails_with_insufficient_user_balance()
     {
         $package = $this->createPackage(ServiceEnum::AIRTIME, 0, '0.02', Package::PRICE_TYPE_DISCOUNT);

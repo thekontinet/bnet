@@ -27,7 +27,8 @@ class Package extends Model implements Product
     protected $casts = [
         'service' => ServiceEnum::class,
         'price_type' => 'string',
-        'data' => 'json'
+        'data' => 'json',
+        'active' => 'boolean'
     ];
 
     public function code(): Attribute
@@ -35,6 +36,11 @@ class Package extends Model implements Product
         return new Attribute(
             fn() => $this->data['package_code'] ?? null
         );
+    }
+
+    public function canBePurchased()
+    {
+        return $this->active;
     }
 
     public function isFixedPriceType(): bool

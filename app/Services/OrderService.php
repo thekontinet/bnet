@@ -27,6 +27,7 @@ class OrderService
      */
     public function create(Product $product, Customer $customer, array $data = []): Order
     {
+        if(!$product->canBePurchased()) throw new Exception("Product not available for purchase. Try again later", ErrorCode::ORDER_PROCESSING_FAILED);
         return DB::transaction(function() use($product, $customer, $data){
             $sellPrice = money($product->getPrice($customer))->getAmount();
             $costPrice = money($product->getPrice(tenant()))->getAmount();

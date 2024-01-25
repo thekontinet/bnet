@@ -21,6 +21,7 @@ return new class extends Migration
             $table->integer('price_type');
             $table->integer('price');
             $table->integer('discount')->default(0);
+            $table->boolean('active')->default(true);
             $table->json('data')->nullable();
             $table->timestamps();
         });
