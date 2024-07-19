@@ -47,7 +47,7 @@
                 name="whatsapp"
                 id="whatsapp"
                 value="{{old('whatsapp')}}"
-                placeholder="Facebook Profile Link">
+                placeholder="Whatsapp Group or Profile Link">
                 <x-slot name="prefix">
                     <x-bi-whatsapp class="size-4"/>
                 </x-slot>
@@ -77,7 +77,7 @@
                 name="instagram"
                 id="instagram"
                 value="{{old('instagram')}}"
-                placeholder="Facebook Profile Link">
+                placeholder="Instagram Profile Link">
                 <x-slot name="prefix">
                     <x-bi-instagram class="size-4"/>
                 </x-slot>
