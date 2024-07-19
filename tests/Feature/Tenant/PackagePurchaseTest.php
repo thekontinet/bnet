@@ -4,10 +4,12 @@ namespace Tests\Feature\Tenant;
 
 use App\Enums\ErrorCode;
 use App\Enums\ServiceEnum;
+use App\Jobs\ProcessOrder;
 use App\Models\Package;
 use App\Services\VirtualTopupService;
 use App\Services\VtuProviders\FakePackageManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
 use Tests\TenantTestCase;
 
@@ -25,6 +27,8 @@ class PackagePurchaseTest extends TenantTestCase
         Http::fake(function () {
             return ['status' => 'success'];
         });
+
+        Bus::fake();
 
         $this->login();
         auth()->user()->wallet->deposit($this->userWalletBalance);
@@ -55,10 +59,32 @@ class PackagePurchaseTest extends TenantTestCase
         $this->assertEquals((int) tenant()->wallet->balance, $tenantBalance);
     }
 
+    public function test_can_list_discount_price_package()
+    {
+        $package = $this->createPackage(ServiceEnum::AIRTIME, 0, '2', Package::PRICE_TYPE_DISCOUNT);
+        tenant()->packages()->attach($package, ['discount' => '1', 'price' => 0]);
+
+        $response = $this->get(route('tenant.service.purchase', $package->service));
+
+        $response->assertStatus(200);
+        $response->assertSee($package->title);
+    }
+
+    public function test_can_list_fixed_price_package()
+    {
+        $package = $this->createPackage(ServiceEnum::DATA, 0, '2', Package::PRICE_TYPE_FIXED);
+        tenant()->packages()->attach($package, ['discount' => '0', 'price' => 100]);
+
+        $response = $this->get(route('tenant.service.purchase', $package->service));
+
+        $response->assertStatus(200);
+        $response->assertSee($package->title);
+    }
+
     public function test_can_purchase_discount_price_package()
     {
-        $package = $this->createPackage(ServiceEnum::AIRTIME, 0, '0.02', Package::PRICE_TYPE_DISCOUNT);
-        tenant()->packages()->attach($package, ['discount' => '0.02', 'price' => 0]);
+        $package = $this->createPackage(ServiceEnum::AIRTIME, 0, '2', Package::PRICE_TYPE_DISCOUNT);
+        tenant()->packages()->attach($package, ['discount' => '1', 'price' => 0]);
 
         $response = $this->purchasePackage($package, [
             'amount' => '50.00',
@@ -66,7 +92,8 @@ class PackagePurchaseTest extends TenantTestCase
             'package_id' => $package->id,
         ]);
 
-        $this->assertBalancesAfterPurchase($this->userWalletBalance - $package->getPrice(auth()->user()), $this->tenantWalletBalance - $package->getPrice(tenant()));
+        Bus::assertDispatched(ProcessOrder::class);
+        $this->assertBalancesAfterPurchase(5050, 5100);
 
         $response->assertRedirect()->assertSessionHas('message');
     }
@@ -81,6 +108,7 @@ class PackagePurchaseTest extends TenantTestCase
             'package_id' => $package->id,
         ]);
 
+        Bus::assertDispatched(ProcessOrder::class);
         $this->assertBalancesAfterPurchase($this->userWalletBalance - 200, $this->tenantWalletBalance - 100);
 
         $response->assertRedirect()->assertSessionHas('message');
@@ -146,27 +174,5 @@ class PackagePurchaseTest extends TenantTestCase
         $response->assertRedirect();
         $response->assertSessionHas('error');
         $this->assertBalancesAfterPurchase($this->userWalletBalance, 0);
-    }
-
-    public function test_user_refunded_if_order_delivery_fails()
-    {
-        $package = $this->createPackage(ServiceEnum::AIRTIME, 0, '0.02', Package::PRICE_TYPE_DISCOUNT);
-        tenant()->packages()->attach($package, ['discount' => '0.02', 'price' => 0]);
-
-
-        $this->partialMock(FakePackageManager::class)
-            ->shouldReceive('handleDelivery')
-            ->andThrow(\Exception::class, code: ErrorCode::DELIVERY_FAILED);
-
-        $response = $this->purchasePackage($package, [
-            'amount' => '50.00',
-            'phone' => '0900000000',
-            'package_id' => $package->id,
-        ]);
-
-
-        $response->assertRedirect();
-        $response->assertSessionHas('error');
-        $this->assertBalancesAfterPurchase($this->userWalletBalance, $this->tenantWalletBalance);
     }
 }

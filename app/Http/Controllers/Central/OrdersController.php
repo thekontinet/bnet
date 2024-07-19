@@ -12,7 +12,7 @@ class OrdersController extends Controller
         //TODO: Add search and filter feature
         return view('orders.index', [
             'orders' => $request->user()->orders()
-                ->with(['owner'])->latest()->paginate(50)
+                ->with(['customer'])->latest()->paginate(50)
         ]);
     }
 }

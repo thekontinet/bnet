@@ -19,6 +19,7 @@
         "@alpinejs/mask": "^3.13.3",
         "datatables.net-dt": "^1.13.8",
         "flowbite": "^2.2.1",
-        "lucide": "^0.306.0"
+        "lucide": "^0.306.0",
+        "preline": "^2.3.0"
     }
 }

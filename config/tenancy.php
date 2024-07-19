@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-use Stancl\Tenancy\Database\Models\Domain;
-use App\Models\Tenant;
+use App\Models\Organization;
 
 return [
-    'tenant_model' => Tenant::class,
+    'tenant_model' => Organization::class,
+    
     'id_generator' => null,
 
-    'domain_model' => Domain::class,
+    'domain_model' => \App\Models\Domain::class,
 
     /**
      * The list of domains hosting your central app.
@@ -48,7 +48,7 @@ return [
         'template_tenant_connection' => null,
 
         /**
-         * Tenant database names are created like this:
+         * Organization database names are created like this:
          * prefix + tenant_id + suffix.
          */
         'prefix' => 'tenant',

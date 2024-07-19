@@ -12,7 +12,11 @@ enum ErrorCode: string
 
     const TENANT_OUT_OF_BUSINESS = 602; // code for tenent low balance when client is purchasing
 
-    public static function exist($code)
+    const GATEWAY_UNAVAILABLE = 901;
+
+    const PLAN_UPGRADE_ERROR = 789;
+
+    public static function exist($code): bool
     {
         return collect(self::cases())->pluck('value')->contains($code);
     }

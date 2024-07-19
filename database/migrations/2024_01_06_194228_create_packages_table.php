@@ -21,20 +21,20 @@ return new class extends Migration
             $table->integer('price_type');
             $table->integer('price');
             $table->integer('discount')->default(0);
-            $table->boolean('active')->default(true);
+            $table->boolean('active')->default(false);
             $table->json('data')->nullable();
             $table->timestamps();
         });
 
-        Schema::create('tenant_package', function (Blueprint $table) {
+        Schema::create('organization_package', function (Blueprint $table) {
             $table->id();
             $table->foreignId('package_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(\App\Models\Organization::class)->constrained()->cascadeOnDelete();
             $table->integer('price');
             $table->integer('discount')->default(0);
             $table->timestamps();
 
-            $table->unique(['package_id', 'tenant_id']);
+            $table->unique(['package_id', 'organization_id']);
         });
     }
 

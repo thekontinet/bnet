@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Listeners\UploadTenantConfig;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Stancl\JobPipeline\JobPipeline;
 use Stancl\Tenancy\Events;
-use Stancl\Tenancy\Jobs;
 use Stancl\Tenancy\Listeners;
 use Stancl\Tenancy\Middleware;
 
@@ -18,10 +18,40 @@ class TenancyServiceProvider extends ServiceProvider
     // By default, no namespace is used to support the callable array syntax.
     public static string $controllerNamespace = '';
 
+    public function register()
+    {
+        //
+    }
+
+    public function boot()
+    {
+        $this->bootEvents();
+        $this->mapRoutes();
+
+        $this->makeTenancyMiddlewareHighestPriority();
+
+        \Stancl\Tenancy\Middleware\InitializeTenancyByDomain::$onFail = function () {
+            abort(404);
+        };
+    }
+
+    protected function bootEvents()
+    {
+        foreach ($this->events() as $event => $listeners) {
+            foreach ($listeners as $listener) {
+                if ($listener instanceof JobPipeline) {
+                    $listener = $listener->toListener();
+                }
+
+                Event::listen($event, $listener);
+            }
+        }
+    }
+
     public function events()
     {
         return [
-            // Tenant events
+            // Organization events
             Events\CreatingTenant::class => [],
             Events\TenantCreated::class => [
                 JobPipeline::make([
@@ -70,6 +100,7 @@ class TenancyServiceProvider extends ServiceProvider
             Events\InitializingTenancy::class => [],
             Events\TenancyInitialized::class => [
                 Listeners\BootstrapTenancy::class,
+                UploadTenantConfig::class
             ],
 
             Events\EndingTenancy::class => [],
@@ -90,36 +121,6 @@ class TenancyServiceProvider extends ServiceProvider
             // Fired only when a synced resource is changed in a different DB than the origin DB (to avoid infinite loops)
             Events\SyncedResourceChangedInForeignDatabase::class => [],
         ];
-    }
-
-    public function register()
-    {
-        //
-    }
-
-    public function boot()
-    {
-        $this->bootEvents();
-        $this->mapRoutes();
-
-        $this->makeTenancyMiddlewareHighestPriority();
-
-        \Stancl\Tenancy\Middleware\InitializeTenancyByDomain::$onFail = function () {
-            abort(404);
-        };
-    }
-
-    protected function bootEvents()
-    {
-        foreach ($this->events() as $event => $listeners) {
-            foreach ($listeners as $listener) {
-                if ($listener instanceof JobPipeline) {
-                    $listener = $listener->toListener();
-                }
-
-                Event::listen($event, $listener);
-            }
-        }
     }
 
     protected function mapRoutes()

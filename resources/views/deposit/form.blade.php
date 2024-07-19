@@ -2,7 +2,7 @@
     <x-container>
         <x-card>
             <section class="max-w-xl mx-auto">
-                <form action="{{route('deposit.pay')}}" method="post">
+                <form action="{{route('payment')}}" method="post">
                     @csrf
                     <!-- Amount -->
                     <div class="mt-4" x-data="{value:'0.00'}">

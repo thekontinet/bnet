@@ -4,7 +4,6 @@
     <section class="pb-32 bg-white rounded-t-xl p-4 min-h-screen">
         <header class="mb-4">
             <h4 class="font-medium">Recharge Airtime</h4>
-{{--            <p class="text-sm">Update account information</p>--}}
         </header>
 
         <div class="flex flex-col justify-center">

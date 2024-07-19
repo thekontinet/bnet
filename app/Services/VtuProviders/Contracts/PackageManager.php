@@ -2,15 +2,17 @@
 
 namespace App\Services\VtuProviders\Contracts;
 
-use App\Models\Customer;
-use App\Models\Package;
-use Illuminate\Http\Request;
+use App\Models\Item;
+use Illuminate\Support\Collection;
 
 interface PackageManager
 {
-    public function getPackages(): array;
+    public static function deliverPurchase(Item $item): void;
 
-    public function rules(): array;
+    /**
+     * @return Collection
+     */
+    public function packages(): Collection;
 
-    public function handleDelivery(Package $package, array $params): array;
+    public function sync(array $centralPackages, array $packages, bool $exceptPrice = true): array;
 }

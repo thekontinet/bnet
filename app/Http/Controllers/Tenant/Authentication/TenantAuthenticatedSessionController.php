@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Tenant\Authentication;
 
 use App\Http\Controllers\BaseTenantController;
-use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Central\Auth\LoginRequest;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,7 +17,7 @@ class TenantAuthenticatedSessionController extends BaseTenantController
      */
     public function create(): View
     {
-        return $this->view('auth.login');
+        return view('template::auth.login');
     }
 
     /**

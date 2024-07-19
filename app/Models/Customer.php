@@ -3,16 +3,14 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use App\Models\Contracts\HasWallet;
+use App\Models\Contracts\BelongsToTenant;
 use App\Models\Contracts\Payable;
-use App\Models\Contracts\Product;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\HasApiTokens;
-use Stancl\Tenancy\Database\Concerns\BelongsToTenant;
 
 class Customer extends Authenticatable implements Contracts\Customer
 {
@@ -57,5 +55,10 @@ class Customer extends Authenticatable implements Contracts\Customer
                 $this->setAttribute('lastname', $names[1] ?? '');
             }
         );
+    }
+
+    public function orders(): MorphMany
+    {
+        return $this->morphMany(Order::class, 'customer');
     }
 }

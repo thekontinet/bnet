@@ -17,14 +17,16 @@ return new class extends Migration
             $table->bigInteger('price');
             $table->integer('duration');
             $table->string('interval');
+            $table->integer('level')->unique();
             $table->string('description')->nullable();
         });
 
         Schema::create('subscriptions', function (Blueprint $table) {
             $table->id();
-            $table->foreignUuid('tenant_id');
+            $table->foreignIdFor(\App\Models\Organization::class);
             $table->foreignId('plan_id');
-            $table->timestamp('expires_at')->default(now());
+            $table->timestamp('start_at');
+            $table->timestamp('expires_at');
             $table->timestamps();
         });
     }

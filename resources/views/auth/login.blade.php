@@ -31,22 +31,25 @@
                 <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
             </label>
             @if (Route::has('password.request'))
-                <x-link href="{{ route('password.request') }}">
+                <x-link class="text-sm" href="{{ route('password.request') }}">
                     {{ __('Forgot your password?') }}
                 </x-link>
             @endif
         </div>
 
         <div class="flex items-center justify-end mt-4">
-            @if (Route::has('register'))
-                <x-link href="{{ route('register') }}">
-                    {{ __('Dont have an account ?') }}
-                </x-link>
-            @endif
-
-            <x-primary-button class="ms-3">
+            <x-primary-button class="w-full items-center justify-center mt-8">
                 {{ __('Log in') }}
             </x-primary-button>
         </div>
     </form>
+    <x-slot name="footer">
+        <div class="py-12">
+            @if (Route::has('register'))
+                <x-link href="{{ route('register') }}">
+                    {{ __('Create a new account') }}
+                </x-link>
+            @endif
+        </div>
+    </x-slot>
 </x-guest-layout>

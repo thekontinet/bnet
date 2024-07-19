@@ -2,12 +2,19 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property Carbon $expires_at;
+ */
 class Subscription extends Model
 {
     use HasFactory;
+
+    const EXPIRY_THRESHOLD = 7;
 
     protected $guarded = [];
 
@@ -15,19 +22,26 @@ class Subscription extends Model
         'expires_at' => 'datetime'
     ];
 
-    public function hasExpired(): bool
+    protected $with = ['plan'];
+
+    public function isOnGracePeriod(): bool
     {
-        return $this->plan?->expires_at?->isPast() ?? false;
+       return $this->expired()
+           && $this->expires_at->lessThan(now()->addDays(7));
     }
 
-    public function willSoonExpire(): bool
+    public function expired(): bool
     {
-        // Make the threshold updatable from tha admin panel
-        $expirationThreshold = now()->addDays(7);
-        return $this?->expires_at->isBefore($expirationThreshold) ?? false;
+        return $this->expires_at->lessThan(now());
     }
 
-    public function plan()
+    public function expiring(): bool
+    {
+        $daysBeforeExpiration = 7;
+        return $this->expires_at->lessThanOrEqualTo(now()->addDays($daysBeforeExpiration));
+    }
+
+    public function plan(): BelongsTo
     {
         return $this->belongsTo(Plan::class);
     }

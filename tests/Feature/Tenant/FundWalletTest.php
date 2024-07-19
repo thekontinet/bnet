@@ -2,87 +2,93 @@
 
 namespace Tests\Feature\Tenant;
 
-use App\Enums\Config;
 use App\Models\Payment;
-use App\Services\Gateways\Contracts\Gateway;
 use App\Services\PaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Support\Facades\Http;
 use Tests\TenantTestCase;
-use Tests\TestCase;
 
 class FundWalletTest extends TenantTestCase
 {
     use RefreshDatabase;
 
-    public function test_can_use_the_correct_key(): void
+    public function test_can_render_deposit_page()
     {
-        $this->login()->get(route('tenant.deposit'));
-
-        $this->assertEquals(app(Gateway::class)->getSecret(), tenant()->settings()->get(Config::PAYSTACK_SECRET->value));
-    }
-
-    public function test_render_deposit_page(): void
-    {
-
         $response = $this->login()->get(route('tenant.deposit'));
-
         $response->assertStatus(200);
     }
 
-    public function test_can_redirect_to_payment_link()
+    public function test_can_be_redirected_to_payment_link()
     {
-        Http::fake();
-
-        $this->partialMock(Gateway::class, function($mock){
-            $mock->shouldReceive('createPaymentLink')
-                ->andReturn('/fake-payment-link');
-            $mock->shouldReceive('isReady')
-                ->andReturn(true);
-        });
-
-
-        $repsonse = $this->login()->post(route('tenant.deposit'), [
+        $this->partialMock(PaymentService::class)
+            ->shouldReceive('generatePaymentLink')
+            ->andReturn('/fake-payment-link');
+        $response = $this->login()->post(route('tenant.deposit'), [
             'amount' => '100.00'
         ]);
 
-        $repsonse->assertStatus(302);
-        $repsonse->assertRedirect('/fake-payment-link');
+        $this->assertDatabaseHas(Payment::class, [
+            'amount' => 10000
+        ]);
+        $response->assertRedirect('/fake-payment-link');
     }
 
-    public function test_can_verify_payment_reference()
+    public function test_amount_must_be_in_2_decimal_places()
     {
-        $this->login();
-        $payment = Payment::factory()->for(auth()->user(), 'payable')->create();
-
-        $this->partialMock(Gateway::class, function($mock){
-            $mock->shouldReceive('verifyPayment')
-                ->andReturn(true);
-            $mock->shouldReceive('isReady')
-                ->andReturn(true);
-        });
-
-        $this->get(route('tenant.deposit.verify', ['reference' => $payment->reference]))
-            ->assertRedirect(route('tenant.dashboard'))
-            ->assertSessionHas('message');
+        $response = $this->login()->post(route('tenant.deposit'), [
+            'amount' => '100'
+        ]);
+        $response->assertSessionHasErrors('amount');
     }
 
-    public function test_can_credit_customer_after_payment_verification()
+    public function test_can_verify_payment()
     {
         $this->login();
-        $payment = Payment::factory()->for(auth()->user(), 'payable')->create();
+        $payment = (new PaymentService)->createPayment(auth()->user(), money(1000));
 
-        $this->partialMock(Gateway::class, function($mock){
-            $mock->shouldReceive('verifyPayment')
-                ->andReturn(true);
-            $mock->shouldReceive('isReady')
-                ->andReturn(true);
-        });
+        $this->partialMock(PaymentService::class)
+            ->shouldReceive('checkValidity')
+            ->andReturn(true);
 
+        $response = $this->login()->get(route('tenant.deposit.verify', [
+            'reference' => $payment->reference
+        ]));
 
-        $this->get(route('tenant.deposit.verify', ['reference' => $payment->reference]));
+        $response->assertSessionHas('message');
+    }
 
-        $this->assertEquals(auth()->user()->wallet->balance, $payment->amount->getAmount());
+    public function test_user_can_credited_after_payment_verification(){
+        $this->login();
+        $payment = (new PaymentService)->createPayment(auth()->user(), money(1000));
+
+        $this->partialMock(PaymentService::class)
+            ->shouldReceive('checkValidity')
+            ->andReturn(true);
+
+        $this->login()->get(route('tenant.deposit.verify', [
+            'reference' => $payment->reference
+        ]));
+
+        $payment->refresh();
+
+        $this->assertTrue($payment->isPaid());
+        $this->assertEquals($payment->payable->wallet->balance, $payment->amount);
+    }
+
+    public function test_user_cannot_be_credited_if_payment_already_settled(){
+        $this->login();
+        $payment = (new PaymentService)->createPayment(auth()->user(), money(1000));
+        $payment->verify();
+
+        $this->partialMock(PaymentService::class)
+            ->shouldReceive('checkValidity')
+            ->andReturn(true);
+
+        $this->login()->get(route('tenant.deposit.verify', [
+            'reference' => $payment->reference
+        ]))->assertSessionHas('error');
+
+        $payment->refresh();
+
+        $this->assertEquals($payment->payable->wallet->balance, 0);
     }
 }

@@ -52,12 +52,12 @@
                                         <h2 class="font-medium text-gray-800 dark:text-white ">
                                             {{$order->data['title'] ?? $order->item?->title}}
                                         </h2>
-                                        <p class="text-sm font-normal text-gray-600 dark:text-gray-400">{{$order->data['phone'] ?? ''}}</p>
+                                        <p class="text-sm font-normal text-gray-600 dark:text-gray-400">{{$order->items->count()}} Package(s)</p>
                                     </div>
                                 </td>
                                 <td class="px-12 py-4 text-sm font-medium text-gray-700 whitespace-nowrap">
-                                    <p class="px-3 py-1 text-xs text-center {{\App\Enums\StatusEnum::tryFrom($order->status)?->getTextColor()}} rounded-full {{\App\Enums\StatusEnum::tryFrom($order->status)?->getBgColor()}}">
-                                        {{ucfirst($order->status)}}
+                                    <p class="px-3 py-1 text-xs text-center {{$order->status->getTextColor()}} rounded-full {{$order->status->getBgColor()}}">
+                                        {{ucfirst($order->status->value)}}
                                     </p>
                                 </td>
                                 <td class="px-4 py-4 text-sm text-gray-500 dark:text-gray-300 whitespace-nowrap">
@@ -67,13 +67,13 @@
                                     {{$order->created_at->format('jS M Y h:i:s a')}}
                                 </td>
                                 <td class="px-4 py-4 text-sm text-gray-500 dark:text-gray-300 whitespace-nowrap">
-                                    {{$order->owner->email}}
+                                    {{$order->customer->email}}
                                 </td>
                                 <td class="px-4 py-4 text-sm whitespace-nowrap">
-                                    {{money($order->total)}}
+                                    {{money($order->getTotal())}}
                                 </td>
                                 <td class="px-4 py-4 text-sm whitespace-nowrap">
-                                    {{money($order->profit)}}
+                                    {{money($order->getTotal() - $order->getPlatformTotal())}}
                                 </td>
                             </tr>
                         @endforeach

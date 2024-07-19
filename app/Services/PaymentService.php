@@ -3,83 +3,86 @@
 namespace App\Services;
 
 use App\Exceptions\PaymentError;
-use App\Models\Customer;
+use App\Exceptions\Payments\GatewayError;
+use App\Models\Contracts\Customer;
 use App\Models\Payment;
-use App\Models\Tenant;
 use App\Services\Gateways\Contracts\Gateway;
-use Exception;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class PaymentService
 {
-    private $gateway;
-
-    /**
-     * @throws PaymentError
-     */
-    public function __construct(Gateway $gateway)
+    private function __construct(private readonly Gateway $gateway)
     {
-        $this->gateway = $gateway;
     }
 
-    public function createPaymentLinkFromRequest(Request $request): string
+    /**
+     * @throws GatewayError
+     */
+    public static function use(Gateway | string $gateway): static
     {
-        if(!$this->gateway->isReady()) throw new PaymentError('Payment gateway not available');
+        if(is_string($gateway)){
+            $gateway = app($gateway);
+        }
 
-        $request->validate([
-            'amount' => ['required', 'decimal:2', 'money', 'numeric']
-        ], [
-            'amount.required' => 'required',
-            'amount.decimal' => 'invalid format. 2 decimal place number required'
+        if($gateway instanceof Gateway){
+            return new static($gateway);
+        }
+
+        throw new GatewayError('Cannot use provided gateway');
+    }
+
+    public function createPayment(Customer $user, float | int $amount, string $gateway)
+    {
+        return $user->payments()->create([
+            'organization_id' => tenant('id'), // this will be null if payment is from central domain
+            'reference' => time() . Str::random(4),
+            'amount' => intval($amount * 100),
+            'status' => Payment::StatusPending,
+            'gateway' => $this->gateway::class
         ]);
+    }
 
-        $payment = $request->user()->initializePayment(money($request->amount));
-
+    /**
+     * @throws GatewayError
+     */
+    public function generatePaymentLink(Payment $payment, $callback_url): string
+    {
         return $this->gateway->createPaymentLink(
-            $payment->amount->getAmount(),
-            $request->user()->email,
-            $payment->reference,
-            $this->getCallbackUrl($payment)
+          $payment->amount,
+          $payment->payable->email,
+          $payment->reference,
+          $callback_url
         );
     }
 
+
     /**
-     * @throws Exception
+     * @throws GatewayError
+     * @throws PaymentError
      */
-    public function verifyPaymentFromRequest(Request $request): void
+    public function validatePayment(Payment $payment): bool
     {
-        if(!$this->gateway->isReady()) throw new PaymentError('Payment gateway not available');
-
-        $reference = $request->get('reference');
-
-        $payment = Payment::getPendingByReference($reference);
-
-        if(!$payment){
-            throw new PaymentError('Invalid payment reference');
+        if($payment->isPaid()){
+            throw new PaymentError();
         }
 
-        if (!$this->gateway->verifyPayment($payment->reference)) {
-            throw new PaymentError('Payment verification failed');
+        $paymentData = $this->gateway->getPaymentInfo($payment->reference);
+
+        if ($paymentData->reference !== $payment->reference) {
+            logger()->error("Payment reference mismatch. Expected: {$payment->reference}, got: {$paymentData->reference}");
+            throw new PaymentError();
         }
 
-        DB::transaction(function() use($payment){
-            $payment->verify();
+        if ($paymentData->amount !== $payment->amount) {
+            logger()->error("Payment amount mismatch. Expected: {$payment->amount}, got: {$paymentData->amount}");
+            throw new PaymentError();
+        }
 
-            $payment->payable->wallet->deposit($payment->amount->getAmount(), [
-                'description' => 'Fund wallet',
-                'payment_reference' => $payment->reference
-            ]);
-        });
+        if ($paymentData->status !== true) {
+            logger()->error("Payment status is not successful for reference: {$payment->reference}");
+            throw new PaymentError();
+        }
 
-    }
-
-    private function getCallbackUrl(Payment $payment): string
-    {
-        return match ($payment->payable::class){
-            Customer::class => route('tenant.deposit.verify'),
-            Tenant::class => route('deposit.confirm'),
-            default => null
-        };
+        return true;
     }
 }

@@ -10,19 +10,11 @@
 </head>
 <body>
 <main {{$attributes->merge(['class' => "flex flex-col h-screen max-w-xl mx-auto border shadow relative bg-slate-100"])}}>
-    <header>
-        <x-tenant::alert/>
-    </header>
-    <div class="flex-1 overflow-y-auto">
-        {{$slot}}
-    </div>
-   <footer class="">
-       <x-tenant::layouts.bottom-navigation/>
-   </footer>
+    <x-tenant::alert/>
+    {{$slot}}
 </main>
-<script src="https://unpkg.com/lucide@latest"></script>
-<script>
-    lucide.createIcons();
-</script>
+<footer class="fixed inset-x-0 bottom-0">
+    <x-tenant::layouts.bottom-navigation/>
+</footer>
 </body>
 </html>

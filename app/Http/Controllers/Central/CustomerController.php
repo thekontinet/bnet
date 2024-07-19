@@ -6,11 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
-use MannikJ\Laravel\Wallet\Exceptions\UnacceptedTransactionException;
 use Symfony\Component\Translation\Exception\InvalidArgumentException;
 
-// TODO: Write test for this controller
 class CustomerController extends Controller
 {
     public function index(Request $request)
@@ -32,6 +29,10 @@ class CustomerController extends Controller
             'amount' => ['required', 'decimal:2', 'money', 'numeric', 'min:1'],
             'description' => ['max:1000'],
         ]);
+
+        if($customer->organization_id != auth()->id()){
+            abort(401);
+        }
 
         try{
             if($request->get('type') === 'deposit'){

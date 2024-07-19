@@ -21,7 +21,7 @@ class PlanFactory extends Factory
             'title' => fake()->word(),
             'price' => rand(1000, 10000),
             'duration' => rand(1, 2),
-            'interval' => Plan::INTERVAL_DAY
+            'interval' => Plan::INTERVAL_MONTH
         ];
     }
 }

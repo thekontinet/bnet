@@ -18,18 +18,7 @@ return [
           'description' => 'Update your paystack credentials for customers to pay using paystack',
           'fields' => [
               ['name' => Config::PAYSTACK_SECRET->value, 'label' => 'Paystack Secret Key'],
-              ['name' => Config::PAYSTACK_PUBLIC->value, 'label' => 'Paystack Public Key']
           ]
       ]
-  ],
-    'business' => [
-        [
-            'title' => 'Business Settings',
-            'description' => 'Update business information',
-            'fields' => [
-                ['name' => Config::BUSINESS_LOGO->value, 'label' => 'Upload Business Logo', 'type' => 'file'],
-                ['name' => Config::BUSINESS_NAME->value, 'label' => 'Business Name']
-            ]
-        ],
-    ]
+  ]
 ];

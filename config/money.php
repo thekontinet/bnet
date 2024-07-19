@@ -8,7 +8,7 @@ return [
      */
     'locale' => config('app.locale', 'en_US'),
     'defaultCurrency' => config('app.currency', 'NGN'),
-    'defaultFormatter' => null,
+    'defaultFormatter' => \App\Libs\MoneyFormatter::class,
     'defaultSerializer' => null,
     'isoCurrenciesPath' => __DIR__.'/../vendor/moneyphp/money/resources/currency.php',
     'currencies' => [

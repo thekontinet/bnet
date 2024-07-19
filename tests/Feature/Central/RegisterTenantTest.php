@@ -24,7 +24,7 @@ class RegisterTenantTest extends TestCase
             'name' => 'Test User',
             'username' => 'testusername',
             'email' => 'test@example.com',
-            'phone' => '09000000000',
+            'phone' => '+23400000000',
             'password' => 'password',
             'password_confirmation' => 'password',
         ]);

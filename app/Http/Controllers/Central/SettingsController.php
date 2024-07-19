@@ -2,57 +2,40 @@
 
 namespace App\Http\Controllers\Central;
 
-use App\Enums\Config;
 use App\Enums\Settings\AutomaticPaymentSetting;
 use App\Enums\Settings\ManualPaymentSetting;
+use App\Enums\TenantSettingsType;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-//TODO: Test this controller
 class SettingsController extends Controller
 {
 
-    public function edit(Request $request, string $type)
+    public function edit(Request $request, TenantSettingsType $type)
     {
-        /**
-         * To add more preference settings, add more makeForm() to the array
-         */
-
-        /**
-         * TODO: Restructure the settings class. The implementation is not cool
-         */
         return view("settings.payment", [
             'user' => Auth::user(),
-            'forms' => \config("form.$type")
+            'forms' => $type->getForms()
         ]);
     }
 
-    public function update(Request $request)
+    public function update(Request $request, TenantSettingsType $type)
     {
-        $validated = $request->validate([
-            'form.*' => []
-        ]);
+        $validated = $request->validate($type->rules(), $type->messages());
 
-        $data = $validated['form'];
+//        foreach ($request->allFiles() ?? [] as $key => $file){
+//            $data[$key] = $file->store("uploads", 'public');
+//        }
 
-        foreach ($request->allFiles()['form'] ?? [] as $key => $file){
-            $data[$key] = $file->store("uploads", 'public');
-        }
+        $data =  Auth::user()->config ?? [];
 
-        foreach ($data as $name => $value){
-            Auth::user()->settings()->set($name, $value);
-        }
+        $data = $type->modeifyDataBeforeSave((array) $data, $validated);
 
-        return redirect()->route('dashboard')->with('message', 'upadated');
-    }
 
-    public function makeForm(string $fields, ?string $title = null, ?string $description = null)
-    {
-        return [
-            'title' => $title,
-            'description' => $description,
-            'fields' => $fields::getFields()
-        ];
+        Auth::user()->updateConfig($data);
+
+
+        return redirect()->back()->with('message', 'updated');
     }
 }

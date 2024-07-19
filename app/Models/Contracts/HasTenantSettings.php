@@ -3,22 +3,31 @@
 namespace App\Models\Contracts;
 
 use App\Enums\Config;
-use Illuminate\Http\Request;
 use Rawilk\Settings\Models\HasSettings;
 
 trait HasTenantSettings
 {
     use HasSettings;
-    public function haveAtleastOnePaymentMethod(): bool
+
+    public function updateConfig(array $data): bool
     {
-        return $this->settings()->get(Config::PAYSTACK_SECRET->value) ||
-            ($this->settings()->get(Config::BANK_ACCOUNT_NUMBER->value) &&
-                $this->settings()->get(Config::BANK_ACCOUNT_NAME->value) &&
-                $this->settings()->get(Config::BANK_NAME->value));
+        foreach ($data as $key => $info){
+            if(!config()->has('tenant.app.' . $key)){
+                unset($data[$key]);
+            }
+        }
+
+        $config = [...($this->config ?? []), ...$data];
+
+        return $this->update(['config' => $config]);
     }
 
-    public function completeApplicationSettings(): bool
+    public function hasPaymentMethod(): bool
     {
-        return $this->brand_name && $this->brand_description && $this->logo;
+        $hasBankDetails = ($this->config->get(Config::BANK_ACCOUNT_NUMBER->value) &&
+            $this->config->get(Config::BANK_ACCOUNT_NAME->value) &&
+            $this->config->get(Config::BANK_NAME->value));
+
+        return $this->config->get(Config::PAYSTACK_SECRET->value) || $hasBankDetails;
     }
 }

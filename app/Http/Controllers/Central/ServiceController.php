@@ -16,34 +16,51 @@ class ServiceController extends Controller
     {
     }
 
-    public function edit(Request $request, ?ServiceEnum $service = null)
+    public function index()
     {
         return view('service.index', [
-            'service' => $service,
-            'providers' => $service ? Package::query()
-                ->where('service', $service)
-                ->distinct('provider')
-                ->pluck('provider') : null,
-            'packages' => $request->query('provider') ? Auth::user()->packages()
-                ->orderBy('package_id')
-                ->where('service', $service)
-                ->where('provider', $request->get('provider'))
-                ->get() : null
+            'services' => ServiceEnum::cases()
         ]);
     }
 
-    public function update(Request $request, ServiceEnum $service)
+    public function show(ServiceEnum $service)
+    {
+        return view('service.show', [
+            'service' => $service,
+            'providers' => Package::query()
+                ->where('service', $service)
+                ->distinct('provider')
+                ->pluck('provider')
+        ]);
+    }
+
+    public function edit(ServiceEnum $service, string $provider)
+    {
+        return view('service.edit', [
+            'service' => $service,
+            'provider' => $provider,
+            'packages' => Auth::user()->packages()
+                ->orderBy('package_id')
+                ->where('service', $service)
+                ->where('provider', $provider)
+                ->get()
+        ]);
+    }
+
+    public function update(Request $request)
     {
         $request->validate([
-            'form.*' => $service->pricingTypeIsFixed() ?
-                ['required', 'decimal:2', 'money', 'numeric']:
-                ['required', 'numeric', 'max:100', 'min:1']
+            'fixed' => ['sometimes', 'array'],
+            'fixed.*' => ['sometimes', 'decimal:2', 'money', 'numeric'],
+            'discount' => ['sometimes', 'array'],
+            'discount.*' => ['sometimes', 'integer']
         ], [
-            'form.*.required' => 'required',
-            'form.*.decimal' => 'invalid format. 2 decimal place number required'
+            'fixed.*.decimal' => 'Please provide a number with two decimal places',
+            'discount.*.integer' => 'Please enter a whole number for the discount.',
         ]);
 
-        $data = $request->get('form');
+        $data = ($request->get('fixed') ?? []) + ($request->get('discount') ?? []);
+
 
         $packages = Package::query()->whereIn('id', array_keys($data))->get();
 

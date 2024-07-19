@@ -2,54 +2,105 @@
 
 namespace App\Services;
 
-use App\Models\Contracts\Customer;
-use App\Models\Contracts\Subscriber;
+use App\Exceptions\AppError;
+use App\Models\Organization;
 use App\Models\Plan;
 use App\Models\Subscription;
-use App\Models\Tenant;
-use Illuminate\Support\Facades\DB;
 
-class SubscriptionService
+class
+SubscriptionService
 {
-    public function getSubscriber(?Tenant $tenant)
+    /**
+     * @throws AppError
+     */
+    public function subscribe(Plan $plan, Organization $tenant): Subscription
     {
-        return $tenant ?? auth()->user();
-    }
-    public function hasActiveSubscription(?Tenant $tenant = null)
-    {
-        $subscriber = $this->getSubscriber($tenant);
-        $subscription = $subscriber->subscription;
+        if($tenant->subscription()->exists()){
+            return $this->upgrade($tenant, $plan);
+        }
 
-        if(!$subscription) return false;
-
-        if($subscription->expires_at->isPast()) return false;
-
-        return true;
-    }
-
-    public function subscriberCanUpgradeToPlan(Plan $plan, ?Tenant $tenant = null): bool
-    {
-        $subscriber = $this->getSubscriber($tenant);
-
-        return $subscriber->subscription?->plan->isNot($plan) ||
-            $subscriber->subscription?->expires_at->isPast();
+        return $plan->subscriptions()->create([
+            'organization_id' => $tenant->getKey(),
+            'start_at' => now(),
+            'expires_at' => now()->add($plan->duration, $plan->interval)
+        ]);
     }
 
-    public function subscribe(Plan $plan, ?Tenant $tenant = null): Subscription
+    /**
+     * @throws AppError
+     */
+    public function upgrade(Organization $tenant, Plan $plan): Subscription
     {
-        //TODO: Add feature to make sure user is not downgrading while plan is still active
-        $subscriber = $this->getSubscriber($tenant);
-        return DB::transaction(function() use ($subscriber, $plan){
-            $subscriber->wallet->withdraw($plan->price->getAmount(), [
-                'description' => "Purchase of $plan->title"
-            ]);
+        if(!$tenant->subscription()->exists()) throw new AppError(
+            'You do not have any existing subscription'
+        );
 
+        if($plan->level < $tenant->subscription->plan->level){
+            $this->downgrade($tenant, $plan);
+        }
 
-            $subscriber->subscription()->delete();
-            return $subscriber->subscription()->firstOrCreate(
-                [],
-                ['expires_at' => $plan->getExpiryDate(), 'plan_id' => $plan->id]
+        if((int) $tenant->subscription->plan_id === (int) $plan->id){
+            return $this->renew($tenant, $plan);
+        }
+
+        $tenant->subscription()->update([
+            'plan_id' => $plan->id,
+            'start_at' => $tenant->subscription->expires_at,
+            'expires_at' => $tenant->subscription->expires_at->add($plan->duration, $plan->interval)
+        ]);
+
+        return $tenant->subscription;
+    }
+
+    /**
+     * @throws AppError
+     */
+    public function downgrade(Organization $tenant, Plan $plan): Subscription
+    {
+        if(!$tenant->subscription()->exists()) throw new AppError(
+            'You do not have any existing subscription'
+        );
+
+        if(!$tenant->subscription->isOnGracePeriod()){
+            throw new AppError(
+                'You can only downgrade when your current subscription expires'
             );
-        });
+        }
+
+        $tenant->subscription()->update([
+            'plan_id' => $plan->id,
+            'start_at' => now(),
+            'expires_at' => now()->add($plan->duration, $plan->interval)
+        ]);
+
+        return $tenant->subscription;
+    }
+
+    /**
+     * @throws AppError
+     */
+    public function renew(Organization $tenant, Plan $plan): Subscription
+    {
+        if(!$tenant->subscription()->exists()) throw new AppError(
+            'You do not have any existing subscription'
+        );
+
+        if((int) $tenant->subscription->plan_id !== (int) $plan->id){
+            throw new AppError(
+                'You are not subscribed to this plan'
+            );
+        }
+
+        if(!$tenant->subscription->expiring()){
+            throw new AppError(
+                'Your current subscription is still active'
+            );
+        }
+
+        $tenant->subscription()->update([
+            'expires_at' => now()->add($plan->duration, $plan->interval)
+        ]);
+
+        return $tenant->subscription;
     }
 }

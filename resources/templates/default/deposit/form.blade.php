@@ -7,7 +7,7 @@
             </div>
         @endif
 
-        <div class="bg-white p-4 rounded">
+        <div class="bg-white rounded">
             @include('template::deposit.partials.manual-payment-form')
         </div>
     </section>

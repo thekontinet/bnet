@@ -2,7 +2,7 @@
 @php
 $bag = $customer->email
 @endphp
-<div class="max-w-sm border p-4 rounded bg-slate-100">
+<div class="max-w-sm border dark:border-neutral-800 p-4 rounded bg-slate-100 dark:bg-neutral-800">
     <h4 class="font-medium text-lg">{{str($customer->firstname)->append(' ', $customer->lastname)}}</h4>
     <p class="text-sm">{{$customer->email}}</p>
     <p class="text-sm">{{$customer->created_at->format('jS M Y')}}</p>
@@ -25,13 +25,12 @@ $bag = $customer->email
     <!-- Deposit Modal Box -->
     <x-modal :show="$errors->$bag->count()" name="modal-{{$customer->id}}">
         <header class="py-2 px-3">
-            <h4 class="text-lg font-medium">Manage Customer Funds</h4>
-            <h5 class="text-sm font-medium">Customer Name: {{$customer->firstname}}  {{$customer->lastname}}</h5>
+            <h4 class="text-lg font-medium">Fund Customer Balance</h4>
         </header>
         <form class="p-3" action="{{route('customer.update', $customer)}}" method="post" onsubmit="return confirm('Are you sure you want to perform this transaction ?')">
             @csrf
             <div>
-                <x-input-label for="type" value="{{__('Fullname')}}"/>
+                <x-input-label for="type" value="{{__('Customer')}}"/>
                 <x-text-input class="w-full" value="{{$customer->fullname}}" :disabled="true"/>
             </div>
 

@@ -2,54 +2,54 @@
 
 namespace App\Models;
 
-use App\Models\Contracts\Payable;
-use Cknow\Money\Casts\MoneyIntegerCast;
+use App\Models\Contracts\Customer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
+/**
+ * @property Customer|Organization $payable
+ */
 class Payment extends Model
 {
     use HasFactory;
 
-    const STATUS_PENDING = 'pending';
+    const StatusPending = 'pending';
 
-    const STATUS_SUCCESS = 'success';
+    const StatusPaid = 'paid';
 
-    const STATUS_FAILED = 'failed';
+    const StatusFailed = 'failed';
 
     protected $guarded = [];
 
     protected $casts = [
-        'amount' => MoneyIntegerCast::class
+        'amount' => 'integer'
     ];
 
-    public function scopeOnlyPending(Builder $query)
+    public function scopeOnlyPending(Builder $query): Builder
     {
-        return $query->where('status', self::STATUS_PENDING);
+        return $query->where('status', self::StatusPending);
     }
 
-    public static function getPendingByReference($reference)
+    public function isPaid(): bool
     {
-        return self::query()
-            ->onlyPending()
-            ->where('status', self::STATUS_PENDING)
-            ->where('reference', $reference)
-            ->first();
+        return $this->status === self::StatusPaid;
     }
 
-    public function isSuccessful()
+    public function verify(): bool
     {
-        return $this->status === self::STATUS_SUCCESS;
+        return $this->update(['status' => self::StatusPaid]);
     }
 
-    public function verify()
-    {
-        return $this->update(['status' => self::STATUS_SUCCESS]);
-    }
-
-    public function payable()
+    public function payable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    public function transactionReference(): MorphOne
+    {
+        return $this->morphOne(Transaction::class, 'reference');
     }
 }

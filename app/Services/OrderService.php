@@ -2,128 +2,122 @@
 
 namespace App\Services;
 
-use App\Enums\ErrorCode;
-use App\Models\Contracts\Customer;
-use App\Models\Contracts\Product;
+use App\Enums\ServiceEnum;
+use App\Enums\StatusEnum;
+use App\Exceptions\PaymentError;
+use App\Exceptions\ServicePurchaseError;
+use App\Models\Customer;
+use App\Models\Item;
 use App\Models\Order;
-use App\Models\Transaction;
-use App\Services\VtuProviders\Contracts\PackageManager;
-use Exception;
-use Illuminate\Support\Facades\DB;
+use App\Models\Service;
+use App\Services\VtuProviders\AirtimePackageManager;
+use App\Services\VtuProviders\DataPackageManager;
 use Illuminate\Support\Str;
+use MannikJ\Laravel\Wallet\Exceptions\UnacceptedTransactionException;
 
 class OrderService
 {
-    /**
-     * Creates a new order for a product and customer.
-     *
-     * @param Product $product
-     * @param Customer $customer
-     * @param array $data Additional data to be stored with the order.
-     *
-     * @return Order The newly created order.
-     *
-     * @throws Exception If any errors occur during order creation.
-     */
-    public function create(Product $product, Customer $customer, array $data = []): Order
+    public function addItems(Order $order, Service $service, int $amount, int $quantity = 1, int $platform_amount = 0, array $attributes = []): void
     {
-        if(!$product->canBePurchased()) throw new Exception("Product not available for purchase. Try again later", ErrorCode::ORDER_PROCESSING_FAILED);
-        return DB::transaction(function() use($product, $customer, $data){
-            $sellPrice = money($product->getPrice($customer))->getAmount();
-            $costPrice = money($product->getPrice(tenant()))->getAmount();
+        $order->items()->create([
+            'product_id' => $service->id,
+            'product_type' => $service::class,
+            'quantity' => $quantity,
+            'customer_amount' => $amount,
+            'platform_amount' => $platform_amount,
+            'attr' => $attributes,
+            'status' => StatusEnum::PENDING
+        ]);
+    }
 
-            return Order::query()->create([
-                'tenant_id' => tenant('id'),
-                'owner_type' => $customer::class,
-                'owner_id' => $customer->id,
-                'item_type' => $product::class,
-                'item_id' => $product->id,
-                'total' => $sellPrice,
-                'profit' => 0,
-                'reference' => time() . Str::random(8), // TODO: generate a better unique refrence
-                'status' => Order::STATUS_PENDING,
-                'data' => [
-                    'title' => $product->title,
-                    'cost_price' => $costPrice,
-                    ...$data
-                ]
+    public function create(Customer $customer, array $attributes = []): Order
+    {
+        return $customer->orders()->create([
+            'organization_id' => tenant('id'),
+            'reference' => Str::uuid(),
+            'status' => StatusEnum::PENDING,
+            'attr' => $attributes
+        ]);
+    }
+
+    /**
+     * @throws UnacceptedTransactionException
+     * @throws PaymentError
+     */
+    public function handleOrderPayment(Order $order): void
+    {
+        if($order->organization->wallet->canWithdraw($order->getPlatformTotal())){
+            $order->organization->wallet->withdraw($order->getPlatformTotal(), [
+                'description' => 'new order'
             ]);
-        });
+        }else{
+            throw new PaymentError('Cannot process payment at the moment');
+        }
+
+        $order->customer->wallet->withdraw($order->getTotal(), [
+            'description' => 'new order'
+        ]);
+
+        $order->updateStatus(StatusEnum::PAID);
     }
 
-    /**
-     * Processes the payment for an order.
-     *
-     * @param Order $order The order to process payment for.
-     *
-     * @throws Exception If the payment has already been successful or if any errors occur during payment processing.
-     */
-    public function processPayment(Order $order): Transaction
+    public function sendDeliverableItems(Order $order): void
     {
-        if($order->isDelivered() || $order->isPaid())
-            throw new Exception("Order has already been payed", ErrorCode::ORDER_PROCESSING_FAILED);
-
-
-        return DB::transaction(function() use($order){
-            $order->fill([
-                'status' => Order::STATUS_PAID,
-            ])->save();
-            return $order->owner->pay($order->item);
-        });
-    }
-
-    /**
-     * Processes a refund for an order.
-     *
-     * @param Order $order
-     *
-     * @throws Exception If any errors occur during the refund process.
-     */
-    public function processRefund(Order $order): void
-    {
-        logger()->info('Refunding order ' . $order->id);
-
-        if($order->isPaid()){
-            DB::transaction(function() use($order){
-                $order->owner->refund($order->item);
-                $order->fill([
-                    'status' => Order::STATUS_FAILED,
-                    'profit' => 0
-                ])->save();
-            });
+        foreach ($order->items as $item){
+            try{
+                $this->deliverServiceItem($item);
+            } catch (ServicePurchaseError $e) {
+                logger()->error('Item delivery failed: ' . $e->getMessage(), $item->toArray());
+                continue;
+            }
         }
     }
 
     /**
-     * @throws Exception
+     * @throws ServicePurchaseError
      */
-    public function handleDelivery(Order $order): void
+    public function deliverServiceItem(Item $item): void
     {
-        try{
-            $deliveryService = app(VirtualTopupService::class, ['service' => $order->item->service]);
-            $reponse = $deliveryService->subscribe($order->item, $order->data);
+        if($item->status !== StatusEnum::PENDING) return;
 
-            $order->fill([
-                'status' => Order::STATUS_DELIVERED,
-                'data' => [...$order->data, 'delivery_response' => $reponse],
-                'profit' => $order->total - $order->data['cost_price']
-            ])->save();
-        }catch (Exception $exception){
-            $this->processRefund($order);
-            throw $exception;
+        if(($item->product instanceof Service) === false) return;
+
+        $manager = match ($item->product->name){
+            ServiceEnum::AIRTIME->value => AirtimePackageManager::class,
+            ServiceEnum::DATA->value => DataPackageManager::class,
+            default => null
+        };
+
+        try {
+            if(!$manager){
+                throw new ServicePurchaseError('This item delivery manager could not be found');
+            }
+
+            $manager::deliverPurchase($item);
+
+        }catch (ServicePurchaseError|\Exception $e) {
+            $item->updateStatus(StatusEnum::FAILED, $e->getMessage());
+            $this->handleItemRefund($item);
+            throw $e;
         }
     }
 
-    /**
-     * Processes payment for an order and initiates its delivery.
-     *
-     * @param Order $order
-     *
-     * @throws Exception If any errors occur during payment processing or delivery.
-     */
-    public function processPaymentAndDeliver(Order $order): void
+    private function handleItemRefund(Item $item): void
     {
-        $this->processPayment($order);
-        $this->handleDelivery($order);
+        if($item->status === StatusEnum::REFUNDED) return;
+
+        \DB::transaction(function() use($item){
+            $order = $item->order;
+            $order->organization->wallet->deposit($item->platform_amount, [
+                'description' => 'refund'
+            ]);
+            $order->customer->wallet->deposit($item->customer_amount, [
+                'description' => 'refund'
+            ]);
+
+            $item->updateStatus(StatusEnum::REFUNDED);
+        });
     }
+
+
 }

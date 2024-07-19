@@ -8,7 +8,7 @@ class TransactionController extends BaseTenantController
 {
     public function index()
     {
-        return $this->view('transaction.index',[
+        return view('template::transaction',[
             'transactions' => auth()->user()->walletTransactions()->paginate(50)
         ]);
     }

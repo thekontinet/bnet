@@ -21,7 +21,7 @@ class PaymentFactory extends Factory
         return [
             'reference' => Str::random(),
             'amount' => rand(1000, 10000),
-            'status' => Payment::STATUS_PENDING,
+            'status' => Payment::StatusPending,
             'gateway' => 'paystack'
         ];
     }

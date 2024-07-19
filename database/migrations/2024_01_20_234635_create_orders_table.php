@@ -13,14 +13,24 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('tenant_id')->nullable();
-            $table->morphs('owner');
-            $table->morphs('item');
-            $table->integer('total');
-            $table->integer('profit');
+            $table->foreignIdFor(\App\Models\Organization::class)->nullable();
+            $table->morphs('customer');
             $table->string('reference');
             $table->string('status');
-            $table->json('data');
+            $table->json('attr');
+            $table->timestamps();
+        });
+
+        Schema::create('items', function (Blueprint $table) {
+            $table->id();
+            $table->foreignIdFor(\App\Models\Order::class);
+            $table->morphs('product');
+            $table->integer('quantity');
+            $table->integer('customer_amount');
+            $table->integer('platform_amount');
+            $table->json('attr');
+            $table->string('status')->nullable();
+            $table->string('message')->nullable();
             $table->timestamps();
         });
     }
@@ -30,6 +40,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('items');
         Schema::dropIfExists('orders');
     }
 };

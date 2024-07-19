@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('customers', function (Blueprint $table) {
             $table->id();
-            $table->foreignUuid('tenant_id');
+            $table->foreignIdFor(\App\Models\Organization::class);
             $table->string('firstname');
             $table->string('lastname');
             $table->string('email');
@@ -23,8 +23,8 @@ return new class extends Migration
             $table->rememberToken();
             $table->timestamps();
 
-            $table->unique(['email', 'tenant_id']);
-            $table->unique(['phone', 'tenant_id']);
+            $table->unique(['email', 'organization_id']);
+            $table->unique(['phone', 'organization_id']);
         });
     }
 

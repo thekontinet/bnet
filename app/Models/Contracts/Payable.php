@@ -19,17 +19,6 @@ trait Payable
         return $this->morphMany(Payment::class, 'payable');
     }
 
-    public function initializePayment(Money $money)
-    {
-        return $this->payments()->create([
-            'tenant_id' => tenant('id'),
-            'reference' => time() . Str::random(4),
-            'amount' => $money->getAmount(),
-            'status' => Payment::STATUS_PENDING,
-            'gateway' => 'paystack'
-        ]);
-    }
-
     /**
      * @throws Exception
      */
@@ -38,14 +27,14 @@ trait Payable
         try {
             if(!$this->tenant->wallet->canWithdraw($product->getPrice($this->tenant))){
                 throw new Exception(
-                    'Tenant balance is low',
+                    'Organization balance is low',
                     ErrorCode::TENANT_OUT_OF_BUSINESS
                 );
             }
 
             return DB::transaction(function() use($product){
-                $this->tenant->wallet->withdraw($product->getPrice($this->tenant));
-                return $this->wallet->withdraw($product->getPrice($this), $product->getMeta());
+                $this->tenant->wallet->withdraw($product->getPrice($this->tenant, request()->get('amount')));
+                return $this->wallet->withdraw($product->getPrice($this, request()->get('amount')), $product->getMeta());
             });
         }catch (UnacceptedTransactionException $e){
             throw new Exception("Payment for Product:$product?->title failed: " . $e->getMessage(), ErrorCode::TRANSACTION_ERROR);

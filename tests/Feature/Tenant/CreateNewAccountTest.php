@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Tenant;
 
+use App\Http\Middleware\DisableIfNoSubscription;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TenantTestCase;
@@ -10,6 +11,12 @@ use Tests\TestCase;
 class CreateNewAccountTest extends TenantTestCase
 {
     use RefreshDatabase;
+
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->withoutMiddleware(DisableIfNoSubscription::class);
+    }
 
     public function test_can_render_register_page(): void
     {

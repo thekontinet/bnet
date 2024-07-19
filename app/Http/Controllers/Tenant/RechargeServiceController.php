@@ -4,11 +4,16 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Enums\ServiceEnum;
 use App\Http\Controllers\BaseTenantController;
+use App\Jobs\ProcessOrder;
 use App\Models\Package;
 use App\Services\OrderService;
 use App\Services\VirtualTopupService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Mockery\Exception;
 
 class RechargeServiceController extends BaseTenantController
 {
@@ -27,72 +32,24 @@ class RechargeServiceController extends BaseTenantController
     /**
      * @throws \Exception
      */
-    public function store(Request $request, OrderService $orderService)
-    {
-        // Validate the incoming request data
-        $request->validate([
-            'package_id' => [
-                'required',
-                Rule::exists('tenant_package', 'package_id')
-                    ->where('tenant_id', tenant('id'))
-            ]
-        ]);
-
-        /**
-         * TODO: Add feature to help switch a service on or off so
-         * TODO: users cannot purchase if it's off.
-         */
-
-        $package = tenant()->packages()->find($request->input('package_id'));
-
-        if (!$package) {
-            return redirect()->route('tenant.dashboard')->with('error', 'Invalid package selected.');
-        }
-
-        // Get the authenticated customer
-        $customer = $request->user();
-
-        try {
-            $order = $orderService->create($package, $customer, $request->validate($request->all()));
-            $orderService->processPaymentAndDeliver($order);
-
-            // TODO: Dispatch these to jobs
-
-            // Redirect to the tenant's dashboard with a success message
-            return redirect()->route('tenant.dashboard')->with('success', 'Airtime purchase success.');
-        } catch (\Exception $e) {
-            // Handle exceptions, log the error, and provide user-friendly feedback
-            return redirect()->route('tenant.dashboard')->with('error', 'An error occurred during the purchase process.');
-        }
-    }
-
-
-    /**
-     * @throws \Exception
-     */
     public function update(Request $request, Package $package, OrderService $orderService)
     {
         $package->tenants()->findOrFail(tenant('id'));
 
         /**
-         * TODO: add feature to help switch a service on or off so
-         * TODO: user cannot purchase if its off
+         * Find the processor for the service and run
+         * validation for  the service requirements
          */
+        $processor = $package->service->getPackageManger();
+        $validated = $request->validate($processor->rules());
 
-        $customer = $request->user();
+        $order = DB::transaction(function() use ($orderService, $package, $validated){
+            $order = $orderService->create($package, Auth::user(), money(request()->get('amount'))->getAmount(), $validated);
+            $orderService->processPayment($order);
+            return $order;
+        });
+        ProcessOrder::dispatch($order);
 
-        $processor = ServiceEnum::tryFrom($package->service->value)->getPackageManger();
-
-        $order = $orderService->create($package, $customer, $request->validate($processor->rules()));
-
-        try {
-            //TODO: Dispatch these to jobs
-            $orderService->processPaymentAndDeliver($order);
-
-            return redirect()->route('tenant.dashboard')->with('message', 'airtime purchase success');
-        }catch (\Exception $e){
-            logger()->error($e->getMessage());
-            return redirect('/dashboard')->with('error', $e->getCode() > 0 ? $e->getMessage() : 'Package purchase failed');
-        }
+        return redirect()->route('tenant.dashboard')->with('message', 'Order submitted for delivery');
     }
 }

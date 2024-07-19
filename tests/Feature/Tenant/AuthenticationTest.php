@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Tenant;
 
+use App\Http\Middleware\DisableIfNoSubscription;
 use App\Models\Customer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TenantTestCase;
@@ -9,6 +10,11 @@ use Tests\TenantTestCase;
 class AuthenticationTest extends TenantTestCase
 {
     use RefreshDatabase;
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->withoutMiddleware(DisableIfNoSubscription::class);
+    }
 
     public function test_can_render_login_page(): void
     {

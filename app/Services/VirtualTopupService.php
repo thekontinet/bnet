@@ -4,10 +4,7 @@ namespace App\Services;
 
 use App\Enums\ServiceEnum;
 use App\Models\Package;
-use App\Models\Tenant;
-use App\Services\VtuProviders\AirtimePackageManager;
 use App\Services\VtuProviders\Contracts\PackageManager;
-use App\Services\VtuProviders\DataPackageManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -25,7 +22,7 @@ class VirtualTopupService
 
     public function uploadPackages(): void
     {
-        $packagesArray =  $this->packageManger->getPackages();
+        $packagesArray =  $this->packageManger->fetchPackages();
         Package::query()->where('service', $this->service)->delete();
         foreach ($packagesArray as $packageData){
             Package::query()->firstOrCreate($packageData);
@@ -40,6 +37,6 @@ class VirtualTopupService
     public function subscribe(Package $package, array $params): array
     {
         Validator::make($params, $this->packageManger->rules());
-        return $this->packageManger->handleDelivery($package, $params);
+        return $this->packageManger->sendOrder($package, $params);
     }
 }

@@ -14,19 +14,21 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        Artisan::call('package:upload');
+        Artisan::call('service:update', ['service' => 'airtime']);
         Plan::factory()->create([
             'title' => 'Monthly Plan',
             'price' => 200000,
             'duration' => 1,
-            'interval' => 'month'
+            'interval' => 'month',
+            'level' => 1
         ]);
 
         Plan::factory()->create([
             'title' => 'Bi Monthly Plan',
             'price' => 550000,
             'duration' => 3,
-            'interval' => 'month'
+            'interval' => 'month',
+            'level' => 2
         ]);
         // \App\Models\User::factory(10)->create();
 

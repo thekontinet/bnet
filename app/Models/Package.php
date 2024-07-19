@@ -3,10 +3,6 @@
 namespace App\Models;
 
 use App\Enums\ServiceEnum;
-use App\Models\Contracts\Customer;
-use App\Models\Contracts\Product;
-use App\Models\Customer as CustomerModel;
-use http\Exception\InvalidArgumentException;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * @property ServiceEnum $service
  */
-class Package extends Model implements Product
+class Package extends Model
 {
     use HasFactory;
 
@@ -38,9 +34,30 @@ class Package extends Model implements Product
         );
     }
 
-    public function canBePurchased()
+    public function label(): Attribute
     {
-        return $this->active;
+        return new Attribute(
+            fn() => $this->price_type === Package::PRICE_TYPE_DISCOUNT ?
+                "$this->title = $this->discount% discount":
+                "$this->title = " . money($this->price)
+        );
+    }
+
+    public function canBePurchased(): bool
+    {
+        return $this->active && $this->getPivot();
+    }
+
+    public function getPivot()
+    {
+        return $this->tenants()
+            ->where('organization_id', tenant('id'))->first()?->pivot;
+    }
+
+    public function tenants()
+    {
+        return $this->belongsToMany(Organization::class, 'organization_package')
+            ->withPivot(['price', 'discount']);
     }
 
     public function isFixedPriceType(): bool
@@ -48,59 +65,10 @@ class Package extends Model implements Product
         return $this->price_type == self::PRICE_TYPE_FIXED;
     }
 
-    public function getSellerPrice()
-    {
-        return $this->tenants()
-            ->where('tenant_id', tenant('id'))->first()?->pivot;
-    }
-
-    public function sellPrice()
-    {
-        if($this->price_type === self::PRICE_TYPE_FIXED){
-            return $this->getSellerPrice()->price;
-        }
-
-        if($this->price_type === self::PRICE_TYPE_DISCOUNT){
-            if(!request()->get('amount')) throw new InvalidArgumentException('No amount in request');
-            return (request()->get('amount') - (request()->get('amount') * ($this->getSellerPrice()->discount/100))) * 100;
-        }
-
-        throw new InvalidArgumentException('Invalid package price type');
-    }
-
-    public function buyPrice()
-    {
-        if($this->price_type === self::PRICE_TYPE_FIXED){
-            return $this->price;
-        }
-
-        if($this->price_type === self::PRICE_TYPE_DISCOUNT){
-            if(!request()->get('amount')) throw new InvalidArgumentException('No amount in request');
-            return (request()->get('amount') - (request()->get('amount') * ($this->discount/100))) * 100;
-        }
-
-        throw new InvalidArgumentException('Invalid package price type');
-    }
-
-    public function getPrice(Customer $customer): string
-    {
-        return match ($customer::class){
-            Tenant::class => $this->buyPrice(),
-            CustomerModel::class => $this->sellPrice(),
-            default => ''
-        };
-    }
-
     public function getMeta(): array
     {
         return [
             'description' => $this->title . ' Purchase'
         ];
-    }
-
-    public function tenants()
-    {
-        return $this->belongsToMany(Tenant::class, 'tenant_package')
-            ->withPivot(['price', 'discount']);
     }
 }

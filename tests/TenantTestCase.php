@@ -2,8 +2,9 @@
 
 namespace Tests;
 
+use App\Http\Middleware\DisableIfNoSubscription;
 use App\Models\Customer;
-use App\Models\Tenant;
+use App\Models\Organization;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Support\Facades\Auth;
@@ -15,11 +16,13 @@ abstract class TenantTestCase extends BaseTestCase
 
     protected bool $tenancy = true;
 
-    protected Authenticatable|null $user = null;
+    protected Customer|null $user = null;
 
     public function setUp(): void
     {
         parent::setUp();
+
+        $this->withoutMiddleware(DisableIfNoSubscription::class);
 
         if ($this->tenancy) {
             $this->initializeTenancy();
@@ -28,7 +31,7 @@ abstract class TenantTestCase extends BaseTestCase
 
     public function initializeTenancy(): void
     {
-        $tenant = Tenant::factory()->create();
+        $tenant = Organization::factory()->create();
         $tenant->domains()->create([
             'domain' => 'test.local'
         ]);

@@ -2,7 +2,7 @@
 
 namespace Central;
 
-use App\Models\Tenant;
+use App\Models\Organization;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -20,7 +20,7 @@ class AuthenticationTest extends TestCase
 
     public function test_users_can_authenticate_using_the_login_screen(): void
     {
-        $tenant = Tenant::factory()->create();
+        $tenant = Organization::factory()->create();
 
         $response = $this->post('/login', [
             'email' => $tenant->email,
@@ -33,7 +33,7 @@ class AuthenticationTest extends TestCase
 
     public function test_users_can_not_authenticate_with_invalid_password(): void
     {
-        $tenant = Tenant::factory()->create();
+        $tenant = Organization::factory()->create();
 
         $this->post('/login', [
             'email' => $tenant->email,
@@ -45,7 +45,7 @@ class AuthenticationTest extends TestCase
 
     public function test_users_can_logout(): void
     {
-        $tenant = Tenant::factory()->create();
+        $tenant = Organization::factory()->create();
 
         $response = $this->actingAs($tenant)->post('/logout');
 

@@ -20,6 +20,7 @@
                     Security Settings
                 </a>
             </li>
+            {{--TODO: Make this show button display a modal box--}}
             <li>
                 <a class="flex items-center gap-4 rounded p-4 hover:bg-slate-200 text-slate-600 text-sm font-semibold" href="{{ route('tenant.setting.edit', 'help') }}">
                     <span data-lucide="badge-info" class="size-5"></span>

@@ -2,29 +2,23 @@
 
 namespace App\Services\VtuProviders;
 
-use App\Enums\ErrorCode;
+use App\DataObjects\DataPlanPackageData;
 use App\Enums\ServiceEnum;
-use App\Models\Customer;
-use App\Models\Package;
+use App\Enums\StatusEnum;
+use App\Exceptions\ServicePurchaseError;
+use App\Models\Item;
 use App\Services\VtuProviders\Contracts\PackageManager;
-use Illuminate\Http\Client\HttpClientException;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
-use PHPUnit\TextUI\XmlConfiguration\Exception;
 
 class DataPackageManager implements PackageManager
 {
-    private $client;
-
     const PROVIDER_MTN = 'mtn';
     const PROVIDER_GLO = 'glo';
     const PROVIDER_Airtel = 'airtel';
     const PROVIDER_9Mobile = '9mobile';
-
     public string $endpoint = 'https://www.airtimenigeria.com/api/v1';
+    private $client;
 
     public function __construct()
     {
@@ -34,7 +28,35 @@ class DataPackageManager implements PackageManager
             'Content-Type' => 'application/json'
         ])->baseUrl($this->endpoint);
     }
-    public function getPackages(): array
+
+    /**
+     * @throws ServicePurchaseError
+     */
+    public static function deliverPurchase(Item $item): void
+    {
+        $data = [
+            'package_code' => $item->attr['package_code'],
+            'phone' => $item->attr['phone'],
+            'max_amount' => $item->customer_amount,
+            'customer_reference' => $item->reference,
+            'callback_url' => route('tenant.order.check', $item)
+        ];
+
+        logger()->info('Sending data order', $data);
+
+        $response = app(static::class)->client->post('/data', $data);
+
+        if(!$response->successful()){
+            logger()->error('Data purchase failed: ' . $response->json('message'), $data);
+            throw new ServicePurchaseError('Data purchase failed');
+        }
+
+        logger()->info('sent airtime order');
+
+        $item->updateStatus(StatusEnum::DELIVERING, $response->json('message'));
+    }
+
+    public function fetchPackages(): array
     {
         $response = $this->client->get('/data/plans');
 
@@ -45,53 +67,48 @@ class DataPackageManager implements PackageManager
         return [];
     }
 
-    private function formatResponseData(array $array)
+    private function formatResponseData(array $array): Collection
     {
-        $packagesArray = [];
+        $packages = collect();
 
-        foreach ($array as $data){
-            $packagesArray[] = [
-                'uuid' => Str::uuid(),
-                'service' => ServiceEnum::DATA,
+        foreach ($array as  $data){
+            $packages->put($data['package_code'], DataPlanPackageData::fromArray([
+                'id' => $data['package_code'],
+                'name' => $data['plan_summary'],
+                'service' => ServiceEnum::DATA->value,
                 'provider' => $data['network_operator'],
-                'title' => $data['plan_summary'],
+                'validity' => $data['validity'],
                 'description' => '',
-                'price_type' => Package::PRICE_TYPE_FIXED,
+                'currency' => $data['currency'],
+                'main_price' => $data['regular_price'] * 100,
                 'price' => $data['regular_price'] * 100,
-                'discount' => 0,
-                'data' => [
-                    'package_code' => $data['package_code']
-                ]
-            ];
+            ]));
         }
 
-        return $packagesArray;
+        return $packages;
     }
 
-    public function rules(): array
+    public function packages(): Collection
     {
-        return [
-            'phone' => ['required', 'string', 'max:14'],
-            'customer_reference' => ['nullable', 'string']
-        ];
-    }
+        $response = $this->client->get('/data/plans');
 
-    public function handleDelivery(Package $package, array $params): array
-    {
-        $data = Validator::make($params, $this->rules())->validated();
-
-        try {
-            $response = $this->client->post('/data', [
-                ...$data,
-                'package_code' => $package->code
-            ])->throw();
-
-            if (($response->json('status') !== 'success'))
-                throw new \Exception($response->json('message'));
-
-            return $response->json();
-        }catch (\Exception $exception) {
-            throw new Exception('Data purchase failed: ' . $exception->getMessage(), ErrorCode::DELIVERY_FAILED);
+        if($response->successful()){
+            return $this->formatResponseData($response->json('data'));
         }
+
+        return collect();
+    }
+
+    public function sync(array $centralPackages, array $packages, bool $exceptPrice = true): array
+    {
+        return array_map(function($package) use ($centralPackages, $exceptPrice){
+            $package_array = $package->toArray();
+
+            if($exceptPrice && !empty($centralPackages)){
+                $package_array['price'] = $centralPackages[$package_array['id']]['price'];
+            }
+
+            return $package_array;
+        }, $packages);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests;
 
-use App\Models\Tenant;
+use App\Models\Organization;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -17,8 +17,7 @@ class ProfileUpdateRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'lowercase', 'alpha_num', 'max:255',  Rule::unique(Tenant::class)->ignore($this->user()->id)],
-            'email' => ['string', 'lowercase', 'email', 'max:255', Rule::unique(Tenant::class)->ignore($this->user()->id)],
+            'email' => ['string', 'lowercase', 'email', 'max:255', Rule::unique(Organization::class)->ignore($this->user()->id)],
         ];
     }
 }

@@ -28,6 +28,7 @@ class PackageFactory extends Factory
             'price_type' => fake()->randomElement([Package::PRICE_TYPE_FIXED, Package::PRICE_TYPE_DISCOUNT]), // Assuming 3 price types
             'price' => fake()->numberBetween(100, 1000),
             'discount' => fake()->numberBetween(0, 50),
+            'active' => true,
         ];
     }
 }

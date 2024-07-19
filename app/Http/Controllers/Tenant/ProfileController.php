@@ -10,13 +10,20 @@ class ProfileController extends BaseTenantController
 
     public function update(Request $request)
     {
-        $validated = $request->validate([
+        $validated = $request->validateWithBag('profile', [
             'firstname' => ['required', 'string', 'max:255'],
             'lastname' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email'],
             'phone' => ['required', 'string', 'max:255'],
         ]);
 
-        auth()->user()->update($validated);
+        $user = auth()->user()->fill($validated);
+
+        if($user->isDirty('email')){
+            $user->email_verified_at = null;
+        }
+
+        $user->save();
 
         return redirect()->back()->with('message', 'Profile updated');
     }

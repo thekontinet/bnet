@@ -6,7 +6,7 @@ namespace App\Providers;
 use App\Enums\Config;
 use App\Exceptions\PaymentError;
 use App\Models\Customer;
-use App\Models\Tenant;
+use App\Models\Organization;
 use App\Policies\DomainPolicy;
 use App\Services\Gateways\Contracts\Gateway;
 use App\Services\Gateways\Paystack;

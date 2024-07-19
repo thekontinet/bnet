@@ -32,6 +32,7 @@ class Handler extends ExceptionHandler
         $this->renderable(function (\Exception $e) {
             logger()->error($e->getMessage());
 
+
             if(ErrorCode::exist($e->getCode())) return redirect()->back()
                 ->with('error', ErrorCode::getMessage($e->getCode()) ?? $e->getMessage());
 
@@ -39,6 +40,10 @@ class Handler extends ExceptionHandler
         });
 
         $this->renderable(function (UnacceptedTransactionException $e) {
+            return redirect('/dashboard')->with('error', $e->getMessage());
+        });
+
+        $this->renderable(function (AppError $e) {
             return redirect('/dashboard')->with('error', $e->getMessage());
         });
     }

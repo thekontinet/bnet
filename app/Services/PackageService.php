@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\Package;
-use App\Models\Tenant;
+use App\Models\Organization;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -14,12 +14,12 @@ class PackageService
      * Add package to the tenant package list. If update is true it will update the tenant
      * package price if the package already exist
      * @param Package $package
-     * @param Tenant $tenant
+     * @param Organization $tenant
      * @param string|null $price
      * @param bool $update
      * @return void
      */
-    public function addPackageToTenant(Package $package, Tenant $tenant, ?string $price = null, bool $update = false): void
+    public function addPackageToTenant(Package $package, Organization $tenant, ?string $price = null, bool $update = false): void
     {
         if(!is_null($price) && !is_numeric($price)) throw new InvalidArgumentException('Invalid price provided');
 
@@ -49,7 +49,7 @@ class PackageService
         }
     }
 
-    public function addPackagesToTenant(Collection $packages, Tenant $tenant, array $prices, bool $update = false): void
+    public function addPackagesToTenant(Collection $packages, Organization $tenant, array $prices, bool $update = false): void
     {
         DB::transaction(function () use($update, $tenant, $packages, $prices){
             foreach ($packages as $package){
@@ -58,7 +58,7 @@ class PackageService
         });
     }
 
-    public function syncTenantPackages(Tenant $tenant): void
+    public function syncTenantPackages(Organization $tenant): void
     {
         DB::transaction(function() use($tenant){
             $packages = Package::all();

@@ -2,8 +2,9 @@
 
 namespace App\Services\Gateways;
 
-use App\Enums\Config;
+use App\DataObjects\PaymentData;
 use App\Exceptions\PaymentError;
+use App\Exceptions\Payments\GatewayError;
 use App\Services\Gateways\Contracts\Gateway;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Request;
@@ -11,69 +12,75 @@ use Illuminate\Support\Facades\Http;
 
 class Paystack implements Gateway
 {
-    private string $paystackSecretKey;
+    private string $secret;
+    private PendingRequest $client;
 
     /**
      * @throws PaymentError
+     * @throws GatewayError
      */
     public function __construct()
     {
-        $this->paystackSecretKey = tenant() ?
-            tenant()->settings()->get(Config::PAYSTACK_SECRET->value, '') :
-            config('services.paystack.secret_key');
+        $this->secret = config('services.paystack.secret_key');
+
+        if(tenant()){
+            $this->secret = config('tenant.app.paystack.secret');
+        }
+
+        if(!$this->secret) throw new GatewayError('Paystack service not available');
+
+        $this->client = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $this->secret,
+        ])->baseUrl('https://api.paystack.co/transaction');
     }
 
-    public function isReady():bool
+    /**
+     * @throws GatewayError
+     */
+    public function createPaymentLink(int $amount, string $email, $reference, ?string $callback_url): string
     {
-        return !!$this->paystackSecretKey;
+
+        $response = $this->client->post('/initialize', [
+            'amount' => $amount,
+            'email' => $email,
+            'callback_url' => $callback_url,
+            'reference' => $reference,
+        ]);
+
+        if (!$response->successful()) {
+            logger()->error("payment could not be generated: {$response['message']}", compact('reference'));
+            throw new GatewayError("Sorry, gateway could not initialize payment");
+        }
+
+        return $response['data']['authorization_url'];
     }
 
+    /**
+     * @throws GatewayError
+     */
+    public function getPaymentInfo(string $reference): PaymentData
+    {
+        $response = $this->client->get("/verify/{$reference}");
+
+        if (!$response->successful()) {
+            throw new GatewayError("Sorry, for some reason, payment link could not be generated: {$response['message']}");
+        }
+
+        $responseData = $response->json('data');
+        $data = collect($responseData)
+            ->only(['status', 'reference', 'currency', 'amount', 'fees'])->toArray();
+        $data['createdDate'] = $responseData['created_at'];
+        $data['paidDate'] = $responseData['paid_at'];
+
+        return PaymentData::fromArray($data);
+    }
 
     public function getClient(): PendingRequest
     {
         return Http::withHeaders([
-            'Authorization' => 'Bearer ' . $this->getSecret(),
+            'Authorization' => 'Bearer ' . $this->paystackSecretKey,
         ])->baseUrl('https://api.paystack.co/transaction');
 
-    }
-
-
-    public function createPaymentLink(int $amount, string $email, $reference, ?string $callback_url): string
-    {
-
-        try {
-            $response = $this->getClient()->post('/initialize', [
-                'amount' => $amount,
-                'email' => $email,
-                'callback_url' => $callback_url,
-                'reference' => $reference,
-            ]);
-
-            if ($response->successful()) {
-                return $response['data']['authorization_url'];
-            } else {
-                throw new \Exception("Payment link creation failed: {$response['message']}");
-            }
-        }catch (\Exception $e) {
-            logger()->error("Payment link creation failed: {$e->getMessage()}");
-            throw $e;
-        }
-    }
-
-    public function verifyPayment(string $reference): bool
-    {
-        try {
-            $response = $this->getClient()->get("/verify/{$reference}");
-
-            if ($response->successful() && $response['data']['status'] === 'success') {
-                return true;
-            } else {
-                return false;
-            }
-        } catch (\Exception $e) {
-            logger()->error("Payment verification failed: {$e->getMessage()}");
-            throw $e;
-        }
     }
 
     public function verifyPaymentWebhook(Request $request): bool
@@ -96,10 +103,5 @@ class Paystack implements Gateway
             logger()->error("Webhook payment verification failed: {$e->getMessage()}");
             throw $e;
         }
-    }
-
-    public function getSecret(): string
-    {
-        return $this->paystackSecretKey;
     }
 }

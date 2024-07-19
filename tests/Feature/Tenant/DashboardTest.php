@@ -20,4 +20,13 @@ class DashboardTest extends TenantTestCase
         $response->assertStatus(200);
         $response->assertViewIs('template::dashboard');
     }
+
+    public function test_user_can_see_thier_transactions(): void
+    {
+        $this->login();
+        $this->user->wallet->deposit(100);
+
+        $response = $this->get('/dashboard');
+        $response->assertSee($this->user->walletTransactions->pluck('amount')->toArray());
+    }
 }

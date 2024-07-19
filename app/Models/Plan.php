@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
-use Cknow\Money\Casts\MoneyIntegerCast;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $level
+ */
 class Plan extends Model
 {
     use HasFactory;
@@ -18,10 +21,6 @@ class Plan extends Model
 
     protected $guarded = [];
 
-    protected $casts = [
-        'price' => MoneyIntegerCast::class
-    ];
-
     public function getExpiryDate()
     {
         $method =  str($this->interval)
@@ -31,5 +30,10 @@ class Plan extends Model
             ->toString();
 
         return now()->$method($this->duration);
+    }
+
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class);
     }
 }

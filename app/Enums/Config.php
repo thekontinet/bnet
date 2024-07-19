@@ -4,13 +4,14 @@ namespace App\Enums;
 
 enum Config: string
 {
-    case PAYSTACK_SECRET = 'paystack_secret';
+    case PAYSTACK_SECRET = 'paystack.secret';
+
     case PAYSTACK_PUBLIC = 'paystack_public';
 
-    case BANK_NAME = 'bank_name';
-    case BANK_ACCOUNT_NAME = 'bank_account_name';
-    case BANK_ACCOUNT_NUMBER = 'bank_account_number';
+    case BANK_NAME = 'bank.name';
+    case BANK_ACCOUNT_NAME = 'bank.account_name';
+    case BANK_ACCOUNT_NUMBER = 'bank.account_number';
+    case BANK_PAYMENT_INFO = 'bank.instruction';
 
-    case BUSINESS_NAME = 'business_name';
-    case BUSINESS_LOGO = 'business_logo';
+    case BUSINESS_NAME = 'name';
 }
